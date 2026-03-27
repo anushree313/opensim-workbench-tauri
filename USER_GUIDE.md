@@ -25,7 +25,13 @@ This guide walks you through every feature of OpenSim Workbench, from first laun
 17. [Saving and Opening Projects](#17-saving-and-opening-projects)
 18. [CLI Usage](#18-cli-usage)
 19. [Keyboard Shortcuts](#19-keyboard-shortcuts)
-20. [Troubleshooting](#20-troubleshooting)
+20. [Chip Test Library](#20-chip-test-library)
+21. [Material Manager](#21-material-manager)
+22. [CSV Export](#22-csv-export)
+23. [Scenario Manager](#23-scenario-manager)
+24. [Solver Plugin System](#24-solver-plugin-system)
+25. [Chip Deformation Analysis](#25-chip-deformation-analysis)
+26. [Troubleshooting](#26-troubleshooting)
 
 ---
 
@@ -808,7 +814,163 @@ Available system types:
 
 ---
 
-## 20. Troubleshooting
+## 20. Chip Test Library
+
+The Chip Test Library provides 32 industry-standard tests covering the full semiconductor lifecycle, from die-level qualification through board-level reliability.
+
+### Step-by-Step Usage
+
+1. Click the **Test Library** button in the toolbar
+2. Browse tests by 5 lifecycle phase tabs: **Die/Wafer**, **Package Assembly**, **Package Reliability**, **Board-Level**, **System-Level**
+3. Search by name, standard reference, or description using the search bar at the top
+4. Click a test card to see full details: description, default parameters, and pass/fail criteria
+5. Click **Select** to apply the test to your TestBed configuration
+6. Click **Run Suite** on a scenario card to execute a multi-test qualification suite
+7. The Test Suite Runner shows progress, per-test pass/fail, and generates reports
+
+### Pre-Built Qualification Scenarios
+
+Five qualification scenarios are included:
+
+| Scenario | Tests | Standard |
+|---|---|---|
+| **BGA Qualification** | Thermal cycling, moisture sensitivity, ball shear | JEDEC |
+| **AEC-Q100 Automotive** | Temperature cycling, HTOL, ESD | AEC-Q100 |
+| **Power Module** | Power cycling, thermal impedance, isolation | IPC / JEDEC |
+| **Consumer Electronics** | Drop test, thermal shock, humidity | IPC |
+| **Flip Chip** | Underfill shear, bump fatigue, warpage | JEDEC / IPC |
+
+---
+
+## 21. Material Manager
+
+The Material Manager lets you create, edit, and share custom materials alongside the built-in library.
+
+### Step-by-Step Usage
+
+1. Click the **Materials** button in the toolbar
+2. The left panel shows all materials — built-in (locked) and custom (editable)
+3. Click **Add New** to create a custom material
+4. Enter properties:
+   - Thermal conductivity (W/m K)
+   - Young's modulus (GPa)
+   - Poisson's ratio
+   - CTE (ppm/K)
+   - Density (kg/m3)
+   - Specific heat (J/kg K)
+   - Shear strength (MPa)
+   - Display color
+5. Click **Save** to persist (stored in localStorage, survives restarts)
+6. Use **Export JSON** to share material libraries, **Import JSON** to load them
+
+### Notes
+
+- Built-in materials (Steel, Aluminum, Copper, Silicon, etc.) cannot be edited or deleted
+- Custom materials appear in all material selection dropdowns throughout the application
+- Exported JSON files can be shared between team members and imported on any machine
+
+---
+
+## 22. CSV Export
+
+Export simulation data as CSV files for post-processing in spreadsheet applications.
+
+### Step-by-Step Usage
+
+1. From **ResultViewer**: click the **Export CSV** button in the toolbar to download field summaries
+2. From **History Panel**: select records and click **Export All** to get a full CSV with all simulation data
+3. CSV includes: field min/max/mean, pass/fail criteria results, solver parameters
+4. Open in Excel, Google Sheets, or any spreadsheet application for post-processing
+
+### CSV Contents
+
+| Export Source | Columns Included |
+|---|---|
+| **Field Summary** | Field name, min, max, mean, unit |
+| **Simulation Records** | Timestamp, solver type, config snapshot, all result values |
+| **Vertex Data** | Node ID, X, Y, Z, field value at each node |
+
+---
+
+## 23. Scenario Manager
+
+Save and restore complete simulation sessions as named scenarios for reproducibility and sharing.
+
+### Step-by-Step Usage
+
+1. Click the **Scenarios** button in the toolbar
+2. To save: enter a name and description, then click **Save Snapshot** — this captures all current simulation records
+3. To load: click **Load** on a saved scenario to restore all records
+4. Use **Export** to save a scenario as a JSON file, **Import** to load from JSON
+5. Share scenarios between team members via JSON files
+
+### Use Cases
+
+- Save a baseline configuration before experimenting with parameters
+- Share a complete analysis session with a colleague for review
+- Archive qualification test results for regulatory documentation
+
+---
+
+## 24. Solver Plugin System
+
+The Plugin System provides an Ansys Workbench-style module registry showing all available solver modules and their coupling capabilities.
+
+### Step-by-Step Usage
+
+1. Click the **Plugins** button in the toolbar to open the Solver Module Registry
+2. View 5 built-in modules: **Structural FEA**, **Thermal FEA**, **CFD (Stokes Flow)**, **Electromagnetic**, **Thermo-Mechanical (CTE)**
+3. Each module shows: version, category, description, and status (Active)
+4. Click a module to see details: output fields (with units), input parameters, and coupling capabilities
+5. The **Provides** list shows what data this module can send to other modules
+6. The **Consumes** list shows what data this module can receive
+7. The **Coupling Diagram** at the bottom shows data flow connections between modules
+
+### Example Coupling Paths
+
+| Source Module | Data Field | Target Module |
+|---|---|---|
+| Thermal FEA | Temperature | Structural FEA |
+| Electromagnetic | HeatGeneration | Thermal FEA |
+| Thermal FEA | Temperature | Thermo-Mechanical (CTE) |
+| CFD (Stokes) | Pressure | Structural FEA |
+
+---
+
+## 25. Chip Deformation Analysis
+
+The Chip Deformation module performs coupled thermo-mechanical analysis to predict warpage and stress in semiconductor packages due to CTE mismatch between layers.
+
+### Step-by-Step Usage
+
+1. Open **Chip Package (DBA)** analysis from the schematic
+2. In the toolbar toggle, select **Deformation** (alongside Thermal and Shear)
+3. The system runs a coupled thermo-mechanical analysis:
+   - **Step 1**: Thermal solve — temperature distribution across leadframe/DBA/die
+   - **Step 2**: CTE strain computation — differential expansion between Si (2.6 ppm/K) and Cu (17 ppm/K)
+   - **Step 3**: Structural solve — displacement, stress, and warpage from combined thermal + mechanical loads
+4. Results include 6 fields: Temperature, Displacement, DisplacementMagnitude, VonMises, ThermalStress, Warpage
+5. The **DeformationViewer** shows:
+   - Deformation scale slider (1x to 100x magnification)
+   - Field summary cards for all quantities
+   - Warpage summary with package bow (um), pass/fail (25 um threshold), curvature radius
+   - Layer-by-layer deformation table
+
+### Pre-Built Deformation Scenarios
+
+Six scenarios are available from the scenario selector:
+
+| Scenario | Key Parameter | Description |
+|---|---|---|
+| **Thermal Gradient** | 50 kW/m2 heat flux | Pure thermal loading from die power dissipation |
+| **Mechanical Shear** | 10 N lateral force | Pure mechanical shear on the DBA layer |
+| **CTE Mismatch Warpage** | Delta-T = 100 C | Warpage from differential thermal expansion |
+| **Reflow Peak Temperature** | 260 C | Solder reflow simulation at peak temperature |
+| **Combined Thermo-Mechanical** | All loads | Worst-case combined thermal + mechanical loading |
+
+---
+
+## 26. Troubleshooting
 
 ### Blank 3D viewport
 

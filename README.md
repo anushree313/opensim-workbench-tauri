@@ -13,17 +13,17 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 
 ## Download
 
-**[Latest Release (v0.7.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
+**[Latest Release (v0.8.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
 
 | Platform | Download | Notes |
 |---|---|---|
-| **Windows 10/11** (64-bit) | [`.msi` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_x64_en-US.msi) | Recommended. Standard MSI with Start Menu shortcut |
-| **Windows 10/11** (64-bit) | [`.exe` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_x64-setup.exe) | NSIS alternative if MSI doesn't work |
-| **macOS Apple Silicon** (M1/M2/M3/M4) | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_aarch64.dmg) | Drag to Applications |
-| **macOS Intel** | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_x64.dmg) | Drag to Applications |
-| **Linux** (Debian/Ubuntu) | [`.deb`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_amd64.deb) | `sudo dpkg -i <file>.deb` — requires libwebkit2gtk-4.1 |
-| **Linux** (Any distro) | [`.AppImage`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_amd64.AppImage) | Portable — `chmod +x` and run directly |
-| **Linux** (RPM) | [`.rpm`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench-0.7.0-1.x86_64.rpm) | Fedora/RHEL/openSUSE |
+| **Windows 10/11** (64-bit) | [`.msi` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_x64_en-US.msi) | Recommended. Standard MSI with Start Menu shortcut |
+| **Windows 10/11** (64-bit) | [`.exe` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_x64-setup.exe) | NSIS alternative if MSI doesn't work |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_aarch64.dmg) | Drag to Applications |
+| **macOS Intel** | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_x64.dmg) | Drag to Applications |
+| **Linux** (Debian/Ubuntu) | [`.deb`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_amd64.deb) | `sudo dpkg -i <file>.deb` — requires libwebkit2gtk-4.1 |
+| **Linux** (Any distro) | [`.AppImage`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_amd64.AppImage) | Portable — `chmod +x` and run directly |
+| **Linux** (RPM) | [`.rpm`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench-0.8.0-1.x86_64.rpm) | Fedora/RHEL/openSUSE |
 
 > See the [Releases page](https://github.com/anushree313/opensim-workbench-tauri/releases) for all versions and platform-specific notes.
 
@@ -55,6 +55,12 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 | **Report Generation** | HTML reports with config tables, results summaries, pass/fail criteria, audio narration |
 | **Test Bed Presets** | JEDEC, IPC, MIL-STD wire presets for one-click simulation setup |
 | **Scripting** | Rhai scripting engine for custom workflows |
+| **Chip Test Library** | 32 industry-standard tests (JEDEC, IPC, AEC-Q100, MIL-STD), 5 qualification scenarios, batch suite runner |
+| **Material Manager** | Custom material CRUD with JSON import/export, localStorage persistence |
+| **CSV Export** | Export field summaries, simulation records, vertex data as downloadable CSV |
+| **Scenario Manager** | Save/load session snapshots, import/export JSON for sharing |
+| **Plugin System** | Ansys Workbench-style SolverModule trait with schema declarations, coupling graph, 5 built-in modules |
+| **Chip Deformation** | Thermo-mechanical coupled solver with CTE mismatch, 5 deformation scenarios, warpage analysis |
 | **CLI** | Headless batch processing (`opensim new`, `opensim info`, `opensim list-systems`) |
 
 ---
@@ -86,8 +92,8 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 |  |  Core     | |  Physics  | | Parametric| |   HPC   |     |
 |  |  Project  | | Structural| |   DOE    | |  Jobs   |     |
 |  |  Geometry | |  Thermal  | | Optimizer| |  Queue  |     |
-|  |  Mesh     | |  CFD (fw) | | Six Sigma| |         |     |
-|  |  Materials| |  EM  (fw) | | Response | |         |     |
+|  |  Mesh     | |  CFD      | | Six Sigma| |         |     |
+|  |  Materials| |  EM       | | Response | |         |     |
 |  |  Post     | |           | | Surface  | |         |     |
 |  +-----------+ +-----------+ +---------+ +----------+     |
 +-----------------------------------------------------------+
@@ -100,7 +106,7 @@ crates/
   core-project/       Project model, DAG graph engine, JSON persistence
   core-geometry/      Geometry primitives, tessellation, STL/OBJ import
   core-mesh/          FE mesh structures, Tet4/Tet10 mesher, quality metrics
-  core-materials/     Material library (9 built-in: Steel, Al, Cu, Si, epoxies...)
+  core-materials/     Material library (10 built-in + custom: Steel, Al, Cu, Si, epoxies, FR-4, Gold Wire)
   core-post/          Result fields (scalar, vector, tensor), time steps
   core-parametric/    DOE, response surfaces, optimization, Six Sigma
   core-hpc/           Async job queue, background execution
@@ -108,8 +114,8 @@ crates/
   core-scripting/     Rhai scripting integration
   physics-structural/ Tet4 FEA: stiffness assembly, LU solve, stress recovery
   physics-thermal/    Tet4 thermal: conductivity assembly, heat flux computation
-  physics-cfd/        CFD framework (Navier-Stokes, solver kernel planned)
-  physics-em/         EM framework (magnetostatic/electrostatic, planned)
+  physics-cfd/        CFD Stokes flow solver (penalty method, velocity + pressure)
+  physics-em/         EM Poisson/potential solvers (electrostatic + magnetostatic)
   app-engine/         Orchestration layer, DTO mapping, Tauri command backing
   cli/                Headless CLI binary (clap-based)
 ```
@@ -133,12 +139,20 @@ app/src/
       ResultViewer.tsx      Pseudo-color field visualization
       DEViewer.tsx          DOE scatter plots, response surfaces, Pareto fronts
       ChipPackageViewer.tsx Full chip DBA simulator (thermal/shear/compare)
+      DeformationViewer.tsx    Chip deformation with CTE warpage analysis
   stores/
     projectStore.ts         React hook state management + Tauri IPC bridge
+    simulationStore.ts        Simulation recording, history, scenarios
   utils/
     chipCalculations.ts     Analytical engine for chip package analysis
+    csvExporter.ts           CSV export for results and records
   types/
     project.ts              TypeScript types mirroring Rust DTOs
+    simulation.ts             Recording, chat, LLM types
+  data/
+    chipTestLibrary.ts      32 industry test definitions
+    sampleScenarios.ts      5 qualification scenarios
+    deformationScenarios.ts 5 chip stress scenarios
 ```
 
 ### Project Graph Model
