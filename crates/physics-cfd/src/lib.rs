@@ -1,5 +1,15 @@
+pub mod solver;
+pub mod tet4_cfd;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+/// Fluid material properties for CFD analysis.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FluidMaterial {
+    pub viscosity: f64, // Pa·s (dynamic viscosity)
+    pub density: f64,   // kg/m³
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CfdAnalysis {
@@ -35,7 +45,7 @@ pub struct CfdSolverSettings {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TurbulenceModel {
     Laminar,
-    // Future: KEpsilon, KOmegaSST, etc.
+    // Future: KEpsilon, KOmegaSST
 }
 
 impl Default for CfdSolverSettings {

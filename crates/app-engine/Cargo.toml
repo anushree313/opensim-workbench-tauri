@@ -19,6 +19,8 @@ core-hpc = { path = "../core-hpc" }
 core-parametric = { path = "../core-parametric" }
 physics-structural = { path = "../physics-structural" }
 physics-thermal = { path = "../physics-thermal" }
+physics-cfd = { path = "../physics-cfd" }
+physics-em = { path = "../physics-em" }
 core-multiphysics = { path = "../core-multiphysics" }
 
 [dev-dependencies]

@@ -296,3 +296,25 @@ pub fn run_dba_comparison(
 ) -> Result<DbaComparisonDto, String> {
     engine.run_dba_comparison(node_id, params).map_err(|e| e.to_string())
 }
+
+// -- CFD commands --
+
+#[tauri::command]
+pub fn run_cfd(
+    engine: tauri::State<EngineState>,
+    node_id: Uuid,
+    params: serde_json::Value,
+) -> Result<ResultViewDto, String> {
+    engine.run_cfd_analysis(node_id, params).map_err(|e| e.to_string())
+}
+
+// -- EM commands --
+
+#[tauri::command]
+pub fn run_em(
+    engine: tauri::State<EngineState>,
+    node_id: Uuid,
+    params: serde_json::Value,
+) -> Result<ResultViewDto, String> {
+    engine.run_em_analysis(node_id, params).map_err(|e| e.to_string())
+}

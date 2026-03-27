@@ -1489,6 +1489,117 @@ impl AppEngine {
         }
     }
 
+    /// Run CFD (Stokes flow) analysis on a mesh.
+    pub fn run_cfd_analysis(
+        &self,
+        node_id: Uuid,
+        params: serde_json::Value,
+    ) -> Result<ResultViewDto, EngineError> {
+        let mut lock = self.graph.lock().map_err(|_| EngineError::LockPoisoned)?;
+        let graph = lock.as_mut().ok_or(EngineError::NoProject)?;
+
+        let mesh = self.find_upstream_mesh(graph, node_id)?;
+
+        let viscosity = params.get("viscosity").and_then(|v| v.as_f64()).unwrap_or(1.003e-3);
+        let density = params.get("density").and_then(|v| v.as_f64()).unwrap_or(998.0);
+        let fluid = physics_cfd::FluidMaterial { viscosity, density };
+
+        let inlet_vel = params.get("inlet_velocity")
+            .and_then(|v| v.as_array())
+            .map(|a| [
+                a.get(0).and_then(|x| x.as_f64()).unwrap_or(0.1),
+                a.get(1).and_then(|x| x.as_f64()).unwrap_or(0.0),
+                a.get(2).and_then(|x| x.as_f64()).unwrap_or(0.0),
+            ])
+            .unwrap_or([0.1, 0.0, 0.0]);
+
+        // Build analysis with default BCs
+        let analysis = physics_cfd::CfdAnalysis {
+            id: Uuid::new_v4(),
+            flow_type: physics_cfd::FlowType::SteadyIncompressible,
+            boundary_conditions: vec![
+                physics_cfd::CfdBc::VelocityInlet {
+                    face_set: mesh.node_sets.first().map(|ns| ns.name.clone()).unwrap_or_else(|| "0".to_string()),
+                    velocity: inlet_vel,
+                },
+                physics_cfd::CfdBc::Wall {
+                    face_set: mesh.node_sets.last().map(|ns| ns.name.clone()).unwrap_or_else(|| "1".to_string()),
+                    no_slip: true,
+                },
+            ],
+            solver_settings: Default::default(),
+        };
+
+        let result = physics_cfd::solver::solve_stokes_flow(&mesh, &analysis, &fluid)
+            .map_err(|e| EngineError::Solver(e.to_string()))?;
+
+        Ok(self.build_result_view_dto(node_id, &result, &mesh, "VelocityMagnitude"))
+    }
+
+    /// Run EM (electrostatic or magnetostatic) analysis.
+    pub fn run_em_analysis(
+        &self,
+        node_id: Uuid,
+        params: serde_json::Value,
+    ) -> Result<ResultViewDto, EngineError> {
+        let mut lock = self.graph.lock().map_err(|_| EngineError::LockPoisoned)?;
+        let graph = lock.as_mut().ok_or(EngineError::NoProject)?;
+
+        let mesh = self.find_upstream_mesh(graph, node_id)?;
+
+        let em_type = params.get("analysis_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("electrostatic");
+
+        let high_set = mesh.node_sets.first().map(|ns| ns.name.clone()).unwrap_or_else(|| "0".to_string());
+        let low_set = mesh.node_sets.last().map(|ns| ns.name.clone()).unwrap_or_else(|| "1".to_string());
+
+        if em_type == "magnetostatic" {
+            let mu = params.get("permeability").and_then(|v| v.as_f64())
+                .unwrap_or(4.0 * std::f64::consts::PI * 1e-7);
+            let material = physics_em::MagneticMaterial { permeability: mu };
+
+            let analysis = physics_em::EmAnalysis {
+                id: Uuid::new_v4(),
+                analysis_type: physics_em::EmAnalysisType::Magnetostatic,
+                boundary_conditions: vec![
+                    physics_em::EmBc::MagneticFluxDensity {
+                        face_set: high_set,
+                        value: [0.0, 0.0, params.get("flux_density").and_then(|v| v.as_f64()).unwrap_or(1.0)],
+                    },
+                    physics_em::EmBc::Voltage { node_set: low_set, value: 0.0 },
+                ],
+                solver_settings: Default::default(),
+            };
+
+            let result = physics_em::solver::solve_magnetostatic(&mesh, &analysis, &material)
+                .map_err(|e| EngineError::Solver(e.to_string()))?;
+
+            Ok(self.build_result_view_dto(node_id, &result, &mesh, "MagneticPotential"))
+        } else {
+            let eps = params.get("permittivity").and_then(|v| v.as_f64()).unwrap_or(8.85e-12);
+            let material = physics_em::DielectricMaterial { permittivity: eps, conductivity: 0.0 };
+
+            let voltage_high = params.get("voltage_high").and_then(|v| v.as_f64()).unwrap_or(100.0);
+            let voltage_low = params.get("voltage_low").and_then(|v| v.as_f64()).unwrap_or(0.0);
+
+            let analysis = physics_em::EmAnalysis {
+                id: Uuid::new_v4(),
+                analysis_type: physics_em::EmAnalysisType::Electrostatic,
+                boundary_conditions: vec![
+                    physics_em::EmBc::Voltage { node_set: high_set, value: voltage_high },
+                    physics_em::EmBc::Voltage { node_set: low_set, value: voltage_low },
+                ],
+                solver_settings: Default::default(),
+            };
+
+            let result = physics_em::solver::solve_electrostatic(&mesh, &analysis, &material)
+                .map_err(|e| EngineError::Solver(e.to_string()))?;
+
+            Ok(self.build_result_view_dto(node_id, &result, &mesh, "ElectricPotential"))
+        }
+    }
+
     fn node_to_dto(&self, node: &SystemNode) -> SystemNodeDto {
         SystemNodeDto {
             id: node.id,

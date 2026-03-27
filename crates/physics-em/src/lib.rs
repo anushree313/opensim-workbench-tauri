@@ -1,5 +1,21 @@
+pub mod solver;
+pub mod tet4_em;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+/// Dielectric material properties for electrostatic analysis.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DielectricMaterial {
+    pub permittivity: f64,  // F/m (ε)
+    pub conductivity: f64,  // S/m (σ, for lossy dielectrics)
+}
+
+/// Magnetic material properties for magnetostatic analysis.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MagneticMaterial {
+    pub permeability: f64,  // H/m (μ)
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmAnalysis {

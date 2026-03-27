@@ -376,10 +376,10 @@ opensim-workbench-tauri/
 - [x] Result export — CSV export for field summaries, simulation records, vertex data (v0.5.0)
 - [x] Scenario save/load — snapshot current session, restore, import/export JSON (v0.5.0)
 - [x] FEM-based chip package solver — multi-material Tet4 FEA for thermal + structural (v0.6.0)
-- [ ] CFD solver kernel (incompressible Navier-Stokes)
-- [ ] EM solver kernel (magnetostatic Poisson equation)
-- [ ] Remote HPC job submission (SSH/REST)
-- [ ] Plugin system for third-party solver integration
+- [x] CFD solver kernel — Stokes flow with penalty method, velocity + pressure fields (v0.7.0)
+- [x] EM solver kernel — electrostatic Poisson + magnetostatic scalar potential (v0.7.0)
+- [x] Remote HPC job submission — SLURM/PBS/LSF script generation, remote job tracking (v0.7.0)
+- [x] Plugin system — SolverPlugin trait, JSON manifest, plugin registry (v0.7.0)
 
 ---
 
