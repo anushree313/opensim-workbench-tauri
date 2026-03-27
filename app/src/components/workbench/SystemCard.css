@@ -1,0 +1,118 @@
+.system-card {
+  position: absolute;
+  width: 200px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+}
+
+.system-card:hover {
+  border-color: var(--accent);
+}
+
+.system-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(91, 141, 239, 0.3);
+}
+
+.system-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.category-analysis .system-card-header {
+  background: linear-gradient(135deg, #2a4a6b, #2a3a5b);
+}
+
+.category-component .system-card-header {
+  background: linear-gradient(135deg, #3a4a3a, #2a3a2a);
+}
+
+.category-designexploration .system-card-header {
+  background: linear-gradient(135deg, #4a3a5a, #3a2a4a);
+}
+
+.system-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.system-card-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.system-card-remove:hover {
+  color: var(--error);
+  background: none;
+}
+
+.system-card-cells {
+  padding: 4px 0;
+}
+
+.system-card-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.system-card-cell:hover {
+  background: var(--bg-tertiary);
+}
+
+.cell-state-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.state-notconfigured { background: var(--not-configured); }
+.state-clean { background: var(--success); }
+.state-dirty { background: var(--warning); }
+.state-solving { background: var(--solving); }
+.state-solved { background: var(--success); }
+.state-failed { background: var(--error); }
+
+.system-card-status {
+  padding: 4px 10px;
+  font-size: 10px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.system-card.openable {
+  cursor: pointer;
+}
+
+.system-card-hint {
+  padding: 2px 10px 4px;
+  font-size: 9px;
+  text-align: center;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.system-card.openable:hover .system-card-hint {
+  opacity: 0.8;
+}

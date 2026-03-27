@@ -1,0 +1,21 @@
+# Rust
+target/
+Cargo.lock
+
+# Node
+app/node_modules/
+app/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tauri
+src-tauri/target/
+
+# Claude
+.claude/

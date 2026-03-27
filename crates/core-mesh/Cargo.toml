@@ -1,0 +1,12 @@
+[package]
+name = "core-mesh"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+nalgebra = { workspace = true }
+core-geometry = { path = "../core-geometry" }
+tracing = { workspace = true }

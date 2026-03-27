@@ -1,0 +1,143 @@
+.result-viewer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.result-canvas-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  overflow: hidden;
+}
+
+.result-canvas-container canvas {
+  flex: 1;
+}
+
+.result-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  background: #1a1a2e;
+}
+
+.result-empty p {
+  margin: 4px 0;
+}
+
+.result-empty button {
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.result-empty button:hover {
+  opacity: 0.9;
+}
+
+/* Stats + legend panel */
+.result-stats-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 220px;
+  max-height: 100%;
+  background: rgba(20, 20, 40, 0.9);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.result-stats-header {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.result-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.result-stat-row .stat-label {
+  color: var(--text-muted);
+}
+
+.result-stat-row .stat-value {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.result-stat-section {
+  padding: 6px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+/* Color legend */
+.color-legend {
+  margin: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.color-legend-bar {
+  height: 120px;
+  width: 20px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.color-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-legend-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 120px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Field selector */
+.field-selector {
+  margin: 8px 12px;
+}
+
+.field-selector select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 12px;
+}

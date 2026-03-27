@@ -1,0 +1,14 @@
+[package]
+name = "core-multiphysics"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+core-mesh = { path = "../core-mesh" }
+core-post = { path = "../core-post" }
+physics-structural = { path = "../physics-structural" }
+physics-thermal = { path = "../physics-thermal" }
+tracing = { workspace = true }

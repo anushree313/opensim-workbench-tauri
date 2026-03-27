@@ -1,0 +1,19 @@
+.workbench {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+.workbench-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.workbench-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

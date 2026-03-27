@@ -1,0 +1,25 @@
+[package]
+name = "app-engine"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+core-project = { path = "../core-project" }
+core-geometry = { path = "../core-geometry" }
+core-mesh = { path = "../core-mesh" }
+core-materials = { path = "../core-materials" }
+core-post = { path = "../core-post" }
+core-hpc = { path = "../core-hpc" }
+core-parametric = { path = "../core-parametric" }
+physics-structural = { path = "../physics-structural" }
+physics-thermal = { path = "../physics-thermal" }
+core-multiphysics = { path = "../core-multiphysics" }
+
+[dev-dependencies]
+tempfile = { workspace = true }

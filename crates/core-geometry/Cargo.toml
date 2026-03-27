@@ -1,0 +1,13 @@
+[package]
+name = "core-geometry"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+nalgebra = { workspace = true }
+tracing = { workspace = true }
+stl_io = { workspace = true }
+tobj = { workspace = true }

@@ -1,0 +1,66 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core-project",
+    "crates/core-geometry",
+    "crates/core-mesh",
+    "crates/core-materials",
+    "crates/physics-structural",
+    "crates/physics-thermal",
+    "crates/physics-cfd",
+    "crates/physics-em",
+    "crates/core-multiphysics",
+    "crates/core-parametric",
+    "crates/core-hpc",
+    "crates/core-post",
+    "crates/core-scripting",
+    "crates/app-engine",
+    "crates/cli",
+    "src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["OpenSim Workbench Contributors"]
+
+[workspace.dependencies]
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Async
+tokio = { version = "1", features = ["full"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Math / linear algebra
+nalgebra = { version = "0.33", features = ["serde-serialize"] }
+nalgebra-sparse = "0.10"
+
+# UUID
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# File formats
+quick-xml = "0.37"
+
+# Scripting
+rhai = "1"
+
+# File formats - geometry import
+stl_io = "0.8"
+tobj = "4"
+
+# Testing
+approx = "0.5"
+tempfile = "3"

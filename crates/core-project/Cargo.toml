@@ -1,0 +1,19 @@
+[package]
+name = "core-project"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+core-geometry = { path = "../core-geometry" }
+core-mesh = { path = "../core-mesh" }
+core-post = { path = "../core-post" }
+core-parametric = { path = "../core-parametric" }
+
+[dev-dependencies]
+tempfile = { workspace = true }
