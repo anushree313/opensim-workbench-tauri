@@ -28,6 +28,8 @@ export const MATERIALS: Record<string, ChipMaterial> = {
   "Solder SAC305":       { name: "Solder SAC305",       k: 58,   E: 50e9,  nu: 0.35, cte: 21e-6,   density: 7400, cp: 230,  shearStrength: 30e6, color: "#cc6699" },
   "Silver Sinter":       { name: "Silver Sinter",       k: 250,  E: 9e9,   nu: 0.37, cte: 19e-6,   density: 8500, cp: 235,  shearStrength: 50e6, color: "#9999cc" },
   "Conductive Adhesive": { name: "Conductive Adhesive", k: 3.5,  E: 5e9,   nu: 0.35, cte: 40e-6,   density: 2000, cp: 900,  shearStrength: 12e6, color: "#cccc66" },
+  "FR-4 PCB":            { name: "FR-4 PCB",            k: 0.3,  E: 22e9,  nu: 0.15, cte: 14e-6,   density: 1900, cp: 1100, shearStrength: 45e6, color: "#669966" },
+  "Gold Wire":           { name: "Gold Wire",           k: 317,  E: 79e9,  nu: 0.44, cte: 14.2e-6, density: 19300, cp: 129,  shearStrength: 0,    color: "#ffcc33" },
 };
 
 export const DBA_MATERIALS = ["Epoxy DBA", "Solder SAC305", "Silver Sinter", "Conductive Adhesive"];

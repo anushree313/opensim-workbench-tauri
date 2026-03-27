@@ -17,6 +17,14 @@ export interface TestBedConfiguration {
     type: string;
     params: Record<string, number>;
   };
+  libraryTestId?: string;
+  passCriteria?: Array<{
+    field: string;
+    fieldLabel: string;
+    operator: "lt" | "gt" | "lte" | "gte";
+    threshold: number;
+    unit: string;
+  }>;
 }
 
 export interface TestBedConfigProps {
@@ -407,6 +415,19 @@ export function TestBedConfig({
             )}
           </section>
         </div>
+
+        {/* -------- Pass Criteria (if from library test) -------- */}
+        {configName && (
+          <div className="tbc-criteria-hint" style={{
+            padding: "8px 16px",
+            fontSize: "0.75rem",
+            color: "var(--text-muted, #707090)",
+            borderTop: "1px solid var(--border, #3a3a55)",
+          }}>
+            Pass/fail criteria will be auto-evaluated from the test library when using "Test Bed" from the ResultViewer.
+            Open the <strong>Test Library</strong> (toolbar) for 32 industry-standard tests with built-in criteria.
+          </div>
+        )}
 
         {/* -------- Actions -------- */}
         <div className="tbc-actions">

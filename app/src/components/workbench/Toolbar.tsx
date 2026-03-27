@@ -6,6 +6,7 @@ interface ToolbarProps {
   onToggleChat?: () => void;
   onToggleHistory?: () => void;
   onOpenSettings?: () => void;
+  onOpenTestLibrary?: () => void;
 }
 
 export function Toolbar({
@@ -13,6 +14,7 @@ export function Toolbar({
   onToggleChat,
   onToggleHistory,
   onOpenSettings,
+  onOpenTestLibrary,
 }: ToolbarProps) {
   const { schematic, newProject, handleSave, handleOpen, isSaving } =
     useProjectStore();
@@ -34,6 +36,9 @@ export function Toolbar({
         </button>
         <button className="toolbar-run-btn" disabled>
           Run All
+        </button>
+        <button onClick={onOpenTestLibrary} title="Chip Test Library">
+          Test Library
         </button>
       </div>
       <div className="toolbar-right">
@@ -58,7 +63,7 @@ export function Toolbar({
         >
           &#x2699;
         </button>
-        <span className="toolbar-status">v0.3.0</span>
+        <span className="toolbar-status">v0.4.0</span>
       </div>
     </div>
   );

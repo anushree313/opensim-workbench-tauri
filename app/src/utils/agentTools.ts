@@ -26,7 +26,18 @@ Available analysis types:
 Available presets for structural: Cantilever Beam, Simply Supported, Fixed-Fixed, Compression Test
 Available presets for thermal: Heat Sink Analysis, Uniform Heating, Spot Heating, Convective Cooling
 
-When users describe a test scenario, translate it into appropriate test bed configuration parameters. Always explain what you're doing and what results mean.`;
+When users describe a test scenario, translate it into appropriate test bed configuration parameters. Always explain what you're doing and what results mean.
+
+You also have access to a comprehensive Chip Test Library with 32 industry-standard tests covering:
+- Die/Wafer Level: thermal characterization, CTE mismatch, die attach shear, warpage
+- Package Assembly: wire bond pull, solder fatigue, DBA comparison, underfill shear, flip-chip
+- Package Reliability: JEDEC temperature cycling (A104), HAST, drop test, IPC shear, BGA reliability, AEC-Q100
+- Board Level: reflow profile, board thermal cycling, flex/bend, vibration (random/sine)
+- System Level: power cycling, thermal shutdown, Arrhenius reliability, thermal impedance, HTOL
+
+Pre-built test scenarios: BGA Qualification, Automotive IC (AEC-Q100), Power Module, Consumer Electronics, Flip Chip Validation.
+
+Use listTestLibrary to see available tests, runLibraryTest to run individual tests, and runTestSuite to run complete qualification scenarios.`;
 
 /* ---- Tool Definitions ------------------------------------------- */
 
@@ -136,6 +147,52 @@ export const AGENT_TOOL_DEFS: ToolDef[] = [
       },
     },
   },
+  {
+    name: "listTestLibrary",
+    description:
+      "List all available chip test definitions from the test library, organized by lifecycle phase.",
+    parameters: {
+      phase: {
+        type: "string",
+        description:
+          'Optional filter by phase: "die_wafer", "package_assembly", "package_reliability", "board_level", "system_validation"',
+      },
+    },
+  },
+  {
+    name: "runLibraryTest",
+    description:
+      "Run a single test from the chip test library by its ID. Returns the simulation record ID with pass/fail results.",
+    parameters: {
+      testId: {
+        type: "string",
+        description:
+          "Test ID from the library, e.g. DIE_THERMAL_CHAR, JEDEC_A104_COND_G, POWER_CYCLING",
+      },
+      paramOverrides: {
+        type: "object",
+        description:
+          "Optional parameter overrides as key-value pairs, e.g. {power_dissipation: 10}",
+      },
+      dbaOverride: {
+        type: "string",
+        description:
+          'Optional DBA material override: "Epoxy DBA", "Solder SAC305", "Silver Sinter", "Conductive Adhesive"',
+      },
+    },
+  },
+  {
+    name: "runTestSuite",
+    description:
+      "Run a pre-built test scenario (suite of multiple tests). Returns array of record IDs.",
+    parameters: {
+      scenarioId: {
+        type: "string",
+        description:
+          'Scenario ID: "bga_qualification", "aec_q100_grade1", "power_module", "consumer_electronics", "flip_chip_validation"',
+      },
+    },
+  },
 ];
 
 /* ---- Store Accessors (lazy-imported to avoid circular deps) ----- */
@@ -147,6 +204,12 @@ interface StoreAccessors {
     config: TestBedConfiguration,
     analysisType: "structural" | "thermal"
   ) => Promise<{ recordId: string }>;
+  runSingleLibraryTest?: (
+    testId: string,
+    paramOverrides?: Record<string, number>,
+    dbaOverride?: string
+  ) => Promise<string>;
+  runTestSuite?: (scenarioId: string) => Promise<string[]>;
   getRecords: () => SimulationRecord[];
   getRecord: (id: string) => SimulationRecord | undefined;
   openReport: (html: string) => void;
@@ -318,6 +381,71 @@ export async function executeAction(
           overall_pass: r.overall_pass,
         }));
         return { tool: "listSimulations", success: true, result: list };
+      }
+
+      case "listTestLibrary": {
+        const { CHIP_TEST_LIBRARY, getTestsByPhase } = await import("../data/chipTestLibrary");
+        const { SAMPLE_SCENARIOS } = await import("../data/sampleScenarios");
+        const phase = action.args.phase as string | undefined;
+        const tests = phase ? getTestsByPhase(phase as "die_wafer") : CHIP_TEST_LIBRARY;
+        const list = tests.map((t) => ({
+          id: t.id, name: t.name, phase: t.phase, category: t.category,
+          standard: t.standard, solverType: t.solverType,
+          criteriaCount: t.passCriteria.length,
+        }));
+        const scenarios = SAMPLE_SCENARIOS.map((s) => ({
+          id: s.id, name: s.name, testCount: s.testIds.length,
+        }));
+        return { tool: "listTestLibrary", success: true, result: { tests: list, scenarios } };
+      }
+
+      case "runLibraryTest": {
+        if (!stores.runSingleLibraryTest) {
+          return { tool: "runLibraryTest", success: false, error: "runSingleLibraryTest not available" };
+        }
+        const testId = action.args.testId as string;
+        const paramOverrides = action.args.paramOverrides as Record<string, number> | undefined;
+        const dbaOverride = action.args.dbaOverride as string | undefined;
+        const recordId = await stores.runSingleLibraryTest(testId, paramOverrides, dbaOverride);
+        const record = stores.getRecord(recordId);
+        return {
+          tool: "runLibraryTest",
+          success: true,
+          result: {
+            recordId,
+            testName: record?.node_name,
+            overall_pass: record?.overall_pass,
+            criteria: record?.pass_criteria,
+            fields: record?.field_summaries,
+          },
+        };
+      }
+
+      case "runTestSuite": {
+        if (!stores.runTestSuite) {
+          return { tool: "runTestSuite", success: false, error: "runTestSuite not available" };
+        }
+        const scenarioId = action.args.scenarioId as string;
+        const recordIds = await stores.runTestSuite(scenarioId);
+        const records = recordIds.map((id) => stores.getRecord(id)).filter(Boolean);
+        const passed = records.filter((r) => r?.overall_pass).length;
+        const failed = records.length - passed;
+        return {
+          tool: "runTestSuite",
+          success: true,
+          result: {
+            scenarioId,
+            recordIds,
+            totalTests: records.length,
+            passed,
+            failed,
+            results: records.map((r) => ({
+              name: r?.node_name,
+              overall_pass: r?.overall_pass,
+              criteria: r?.pass_criteria,
+            })),
+          },
+        };
       }
 
       default:

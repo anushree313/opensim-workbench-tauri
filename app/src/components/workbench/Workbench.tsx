@@ -10,6 +10,8 @@ import { HistoryPanel } from "./HistoryPanel";
 import { CompareView } from "./CompareView";
 import { ReportView } from "./ReportView";
 import { SettingsModal } from "./SettingsModal";
+import { TestLibraryBrowser } from "./TestLibraryBrowser";
+import { TestSuiteRunner } from "./TestSuiteRunner";
 import { GeometryViewer } from "../viewer/GeometryViewer";
 import { MeshViewer } from "../viewer/MeshViewer";
 import { ResultViewer } from "../viewer/ResultViewer";
@@ -24,6 +26,7 @@ export function Workbench() {
   const [selectedNode, setSelectedNode] = useState<SystemNodeDto | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [testLibraryOpen, setTestLibraryOpen] = useState(false);
 
   const {
     schematic,
@@ -53,6 +56,10 @@ export function Workbench() {
     closeCompare,
     closeReport,
     openReport,
+    suiteRunnerOpen,
+    suiteScenarioId,
+    openSuiteRunner,
+    closeSuiteRunner,
   } = useSimulationStore();
 
   const handleOpenGeometry = useCallback(
@@ -126,6 +133,7 @@ export function Workbench() {
         onToggleChat={() => setChatOpen((v) => !v)}
         onToggleHistory={toggleHistory}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenTestLibrary={() => setTestLibraryOpen(true)}
       />
       <div className="workbench-body">
         <Toolbox />
@@ -163,12 +171,26 @@ export function Workbench() {
       {historyOpen && (
         <HistoryPanel
           onClose={toggleHistory}
-          onOpenReport={(html) => openReport(html)}
+          onOpenReport={(html: string) => openReport(html)}
         />
       )}
       {compareOpen && <CompareView onClose={closeCompare} />}
       {reportOpen && <ReportView html={reportHtml} onClose={closeReport} />}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {testLibraryOpen && (
+        <TestLibraryBrowser
+          onClose={() => setTestLibraryOpen(false)}
+          onSelectTest={() => { setTestLibraryOpen(false); }}
+          onRunSuite={(scenarioId) => { setTestLibraryOpen(false); openSuiteRunner(scenarioId); }}
+        />
+      )}
+      {suiteRunnerOpen && suiteScenarioId && (
+        <TestSuiteRunner
+          scenarioId={suiteScenarioId}
+          onClose={closeSuiteRunner}
+          onOpenReport={(html: string) => openReport(html)}
+        />
+      )}
 
       <ToastContainer />
     </div>

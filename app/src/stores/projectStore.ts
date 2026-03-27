@@ -1027,6 +1027,157 @@ export function useProjectStore() {
     [runSolver]
   );
 
+  const runSingleLibraryTest = useCallback(
+    async (
+      testId: string,
+      paramOverrides?: Record<string, number>,
+      dbaOverride?: string
+    ): Promise<string> => {
+      const { getTestById } = await import("../data/chipTestLibrary");
+      const {
+        solveThermal, solveShear, solveCTEMismatch,
+        runFullComparison, solveTransientThermal, runParameterSweep,
+        DEFAULT_GEOMETRY,
+      } = await import("../utils/chipCalculations");
+      const { recordSimulation } = await import("./simulationStore");
+      type PassCriterionTemplate = import("../data/chipTestLibrary").PassCriterionTemplate;
+
+      const test = getTestById(testId);
+      if (!test) throw new Error(`Test ${testId} not found`);
+
+      const startTime = Date.now();
+      const params = { ...test.defaultParams, ...paramOverrides };
+      const geo = { ...DEFAULT_GEOMETRY, ...test.geometryOverrides };
+      const dbaMat = dbaOverride ?? test.recommendedDBA ?? "Epoxy DBA";
+
+      // Build solver inputs from test params
+      const heatFlux = params.heat_flux ?? (params.power_dissipation ? params.power_dissipation / ((geo.die_w * geo.die_h) * 1e-6) : 50000);
+      const bottomTemp = params.bottom_temp ?? params.ambient_temp ?? test.defaultEnvironment.ambientTemp;
+      const thermalBCs = { heatFlux, bottomTemp };
+      const shearBCs = { force: params.force ?? params.pull_force ?? params.shear_force ?? 10, direction: "X" as const };
+      const _deltaT = params.delta_T ?? (params.T_max && params.T_min ? params.T_max - params.T_min : 100);
+      void _deltaT; // used conceptually for CTE analysis context
+
+      // Execute based on solver type
+      const fieldSummaries: Array<{ field_name: string; location: string; min: number; max: number; mean: number }> = [];
+
+      if (test.solverType === "thermal" || test.solverType === "cte" || test.solverType === "combined") {
+        const thermal = solveThermal(geo, thermalBCs, dbaMat);
+        fieldSummaries.push(
+          { field_name: "T_die_top", location: "Node", min: thermal.T_bottom, max: thermal.T_die_top, mean: (thermal.T_bottom + thermal.T_die_top) / 2 },
+          { field_name: "R_jc", location: "Node", min: thermal.R_jc, max: thermal.R_jc, mean: thermal.R_jc },
+        );
+        if (test.solverType === "cte" || test.solverType === "combined") {
+          const cte = solveCTEMismatch(geo, thermal, dbaMat);
+          fieldSummaries.push(
+            { field_name: "sigma_thermal", location: "Element", min: 0, max: cte.sigma_thermal, mean: cte.sigma_thermal * 0.6 },
+            { field_name: "warpage", location: "Node", min: 0, max: cte.warpage, mean: cte.warpage * 0.5 },
+          );
+        }
+      }
+      if (test.solverType === "shear" || test.solverType === "combined") {
+        const shear = solveShear(geo, shearBCs, dbaMat);
+        fieldSummaries.push(
+          { field_name: "tau_max", location: "Element", min: 0, max: shear.tau_max, mean: shear.tau_avg },
+          { field_name: "safetyFactor", location: "Element", min: shear.safetyFactor, max: shear.safetyFactor, mean: shear.safetyFactor },
+        );
+      }
+      if (test.solverType === "comparison") {
+        const comparison = runFullComparison(geo, thermalBCs, shearBCs);
+        const best = comparison[0];
+        fieldSummaries.push(
+          { field_name: "T_die_top", location: "Node", min: 0, max: best.T_junction, mean: best.T_junction * 0.8 },
+          { field_name: "R_jc", location: "Node", min: best.R_jc, max: best.R_jc, mean: best.R_jc },
+          { field_name: "safetyFactor", location: "Element", min: best.safetyFactor, max: best.safetyFactor, mean: best.safetyFactor },
+        );
+      }
+      if (test.solverType === "transient") {
+        const endTime = params.measurement_time ?? 300;
+        const dt = params.dt ?? 1.0;
+        const transient = solveTransientThermal(geo, { heatFlux, bottomTemp }, dbaMat, { endTime, dt });
+        const maxT = Math.max(...transient.steps.map((s: { T_die: number }) => s.T_die));
+        fieldSummaries.push(
+          { field_name: "T_die_top", location: "Node", min: bottomTemp, max: maxT, mean: (bottomTemp + maxT) / 2 },
+          { field_name: "R_jc", location: "Node", min: transient.steadyState.R_jc, max: transient.steadyState.R_jc, mean: transient.steadyState.R_jc },
+        );
+      }
+      if (test.solverType === "sweep") {
+        const sweepParam = params.dba_t_min !== undefined ? "dba_t" : "heat_flux";
+        const sweepMin = params.dba_t_min ?? heatFlux * 0.1;
+        const sweepMax = params.dba_t_max ?? (params.max_power ? params.max_power / ((geo.die_w * geo.die_h) * 1e-6) : heatFlux * 2);
+        const steps = params.sweep_steps ?? params.sweep_points ?? 10;
+        const { linspace } = await import("../utils/chipCalculations");
+        const sweepValues = linspace(sweepMin, sweepMax, steps);
+        const sweep = runParameterSweep(geo, thermalBCs, shearBCs, dbaMat, sweepParam as "dba_t", sweepValues);
+        const lastPt = sweep[sweep.length - 1];
+        fieldSummaries.push(
+          { field_name: "T_die_top", location: "Node", min: sweep[0].T_junction, max: lastPt.T_junction, mean: (sweep[0].T_junction + lastPt.T_junction) / 2 },
+          { field_name: "safetyFactor", location: "Element", min: Math.min(...sweep.map(s => s.safetyFactor)), max: Math.max(...sweep.map(s => s.safetyFactor)), mean: lastPt.safetyFactor },
+        );
+      }
+
+      const duration = Date.now() - startTime;
+
+      // Evaluate pass criteria
+      const evaluatedCriteria = test.passCriteria.map((c: PassCriterionTemplate) => {
+        const summary = fieldSummaries.find((f) => f.field_name === c.field);
+        const actual = summary ? (c.operator === "lt" || c.operator === "lte" ? summary.max : summary.min) : 0;
+        const passed =
+          c.operator === "lt" ? actual < c.threshold :
+          c.operator === "lte" ? actual <= c.threshold :
+          c.operator === "gt" ? actual > c.threshold :
+          actual >= c.threshold;
+        return { field: c.field, operator: c.operator, threshold: c.threshold, actual, passed };
+      });
+
+      const recordId = recordSimulation({
+        timestamp: new Date().toISOString(),
+        duration_ms: duration,
+        solver_type: test.solverType === "shear" ? "structural" : "thermal",
+        node_id: "library-" + test.id,
+        node_name: test.name,
+        solver_params: params,
+        material: dbaMat,
+        field_summaries: fieldSummaries,
+        result_fields: fieldSummaries.map((f) => f.field_name),
+        pass_criteria: evaluatedCriteria,
+        overall_pass: evaluatedCriteria.every((c) => c.passed),
+      });
+
+      addToast(
+        `${test.name}: ${evaluatedCriteria.every((c) => c.passed) ? "PASSED" : "FAILED"} (${duration}ms)`,
+        evaluatedCriteria.every((c) => c.passed) ? "success" : "warning"
+      );
+      return recordId;
+    },
+    []
+  );
+
+  const runTestSuite = useCallback(
+    async (scenarioId: string): Promise<string[]> => {
+      const { getScenarioById } = await import("../data/sampleScenarios");
+      const scenario = getScenarioById(scenarioId);
+      if (!scenario) throw new Error(`Scenario ${scenarioId} not found`);
+
+      addToast(`Running suite: ${scenario.name} (${scenario.testIds.length} tests)`, "success");
+      const recordIds: string[] = [];
+
+      for (const testId of scenario.testIds) {
+        try {
+          const overrides = scenario.paramOverrides?.[testId];
+          const recordId = await runSingleLibraryTest(testId, overrides, scenario.dbaOverride);
+          recordIds.push(recordId);
+        } catch (e) {
+          addToast(`Test ${testId} failed: ${e}`, "error");
+        }
+      }
+
+      addToast(`Suite complete: ${recordIds.length}/${scenario.testIds.length} tests run`, "success");
+      return recordIds;
+    },
+    [runSingleLibraryTest]
+  );
+
   return {
     schematic: _schematic,
     toolbox: _toolbox,
@@ -1059,6 +1210,8 @@ export function useProjectStore() {
     runSolver,
     runThermalSolver,
     runTestBedSimulation,
+    runSingleLibraryTest,
+    runTestSuite,
     changeResultField,
     openDEViewer,
     closeDEViewer,

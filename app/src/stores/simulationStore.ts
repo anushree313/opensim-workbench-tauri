@@ -11,6 +11,8 @@ let _historyOpen = false;
 let _compareOpen = false;
 let _reportOpen = false;
 let _reportHtml = "";
+let _suiteRunnerOpen = false;
+let _suiteScenarioId = "";
 
 /* ================================================================== */
 /*  Listener / notify pattern                                          */
@@ -50,6 +52,18 @@ export function getRecords(): SimulationRecord[] {
 export function openReportDirect(html: string) {
   _reportHtml = html;
   _reportOpen = true;
+  notify();
+}
+
+export function openSuiteRunner(scenarioId: string) {
+  _suiteScenarioId = scenarioId;
+  _suiteRunnerOpen = true;
+  notify();
+}
+
+export function closeSuiteRunner() {
+  _suiteRunnerOpen = false;
+  _suiteScenarioId = "";
   notify();
 }
 
@@ -216,5 +230,11 @@ export function useSimulationStore() {
     // Import / Export
     exportRecords,
     importRecords,
+
+    // Suite runner
+    suiteRunnerOpen: _suiteRunnerOpen,
+    suiteScenarioId: _suiteScenarioId,
+    openSuiteRunner: useCallback((scenarioId: string) => { openSuiteRunner(scenarioId); }, []),
+    closeSuiteRunner: useCallback(() => { closeSuiteRunner(); }, []),
   };
 }
