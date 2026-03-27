@@ -19,7 +19,7 @@ interface Props {
   onBack: () => void;
 }
 
-type AnalysisType = "thermal" | "shear";
+type AnalysisType = "thermal" | "shear" | "deformation";
 type AnalysisMode = "steady" | "transient";
 type RightTab = "comparison" | "sweep" | "correlation";
 
@@ -181,6 +181,8 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
               onClick={() => setAnalysisType("thermal")}>Thermal</button>
             <button className={`toggle-btn ${analysisType === "shear" ? "active" : ""}`}
               onClick={() => setAnalysisType("shear")}>Shear</button>
+            <button className={`toggle-btn ${analysisType === "deformation" ? "active" : ""}`}
+              onClick={() => setAnalysisType("deformation")} style={analysisType === "deformation" ? { background: "#a29bfe" } : {}}>Deformation</button>
           </div>
           {analysisType === "thermal" && (
             <div className="chip-toggle">

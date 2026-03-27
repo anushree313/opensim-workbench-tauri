@@ -297,6 +297,17 @@ pub fn run_dba_comparison(
     engine.run_dba_comparison(node_id, params).map_err(|e| e.to_string())
 }
 
+// -- Thermo-Mechanical commands --
+
+#[tauri::command]
+pub fn run_thermo_mechanical(
+    engine: tauri::State<EngineState>,
+    node_id: Uuid,
+    params: serde_json::Value,
+) -> Result<ResultViewDto, String> {
+    engine.run_thermo_mechanical_analysis(node_id, params).map_err(|e| e.to_string())
+}
+
 // -- CFD commands --
 
 #[tauri::command]

@@ -11,4 +11,6 @@ core-mesh = { path = "../core-mesh" }
 core-post = { path = "../core-post" }
 physics-structural = { path = "../physics-structural" }
 physics-thermal = { path = "../physics-thermal" }
+core-materials = { path = "../core-materials" }
+nalgebra = { workspace = true }
 tracing = { workspace = true }

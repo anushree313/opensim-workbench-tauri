@@ -14,6 +14,7 @@ import { TestLibraryBrowser } from "./TestLibraryBrowser";
 import { TestSuiteRunner } from "./TestSuiteRunner";
 import { MaterialManager } from "./MaterialManager";
 import { ScenarioManager } from "./ScenarioManager";
+import { PluginManager } from "./PluginManager";
 import { GeometryViewer } from "../viewer/GeometryViewer";
 import { MeshViewer } from "../viewer/MeshViewer";
 import { ResultViewer } from "../viewer/ResultViewer";
@@ -31,6 +32,7 @@ export function Workbench() {
   const [testLibraryOpen, setTestLibraryOpen] = useState(false);
   const [materialsOpen, setMaterialsOpen] = useState(false);
   const [scenariosOpen, setScenariosOpen] = useState(false);
+  const [pluginsOpen, setPluginsOpen] = useState(false);
 
   const {
     schematic,
@@ -140,6 +142,7 @@ export function Workbench() {
         onOpenTestLibrary={() => setTestLibraryOpen(true)}
         onOpenMaterials={() => setMaterialsOpen(true)}
         onOpenScenarios={() => setScenariosOpen(true)}
+        onOpenPlugins={() => setPluginsOpen(true)}
       />
       <div className="workbench-body">
         <Toolbox />
@@ -199,6 +202,7 @@ export function Workbench() {
       )}
       {materialsOpen && <MaterialManager onClose={() => setMaterialsOpen(false)} />}
       {scenariosOpen && <ScenarioManager onClose={() => setScenariosOpen(false)} />}
+      {pluginsOpen && <PluginManager onClose={() => setPluginsOpen(false)} />}
 
       <ToastContainer />
     </div>

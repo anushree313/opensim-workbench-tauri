@@ -1,0 +1,187 @@
+.deformation-viewer {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.deformation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.deformation-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.scenario-badge {
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.deformation-scale {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deformation-scale label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.deformation-scale input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.scale-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 40px;
+  text-align: right;
+}
+
+.deformation-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.deformation-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 3px solid var(--border);
+}
+
+.card-temp {
+  border-color: #ff6b6b;
+}
+
+.card-disp {
+  border-color: #4ecdc4;
+}
+
+.card-stress {
+  border-color: #ffd93d;
+}
+
+.card-thermal {
+  border-color: #ff9800;
+}
+
+.card-warpage {
+  border-color: #a29bfe;
+}
+
+.deformation-card h4 {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.deformation-card .value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.deformation-card .range {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.warpage-summary {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.warpage-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.warpage-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  min-width: 110px;
+}
+
+.warpage-bow {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.warpage-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.warpage-note {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.pass-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pass-badge.pass {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.pass-badge.fail {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.layer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.layer-table th {
+  background: var(--bg-tertiary);
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.layer-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.layer-table tbody tr:hover {
+  background: var(--bg-tertiary);
+}

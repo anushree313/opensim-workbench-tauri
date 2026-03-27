@@ -9,6 +9,7 @@ interface ToolbarProps {
   onOpenTestLibrary?: () => void;
   onOpenMaterials?: () => void;
   onOpenScenarios?: () => void;
+  onOpenPlugins?: () => void;
 }
 
 export function Toolbar({
@@ -19,6 +20,7 @@ export function Toolbar({
   onOpenTestLibrary,
   onOpenMaterials,
   onOpenScenarios,
+  onOpenPlugins,
 }: ToolbarProps) {
   const { schematic, newProject, handleSave, handleOpen, isSaving } =
     useProjectStore();
@@ -50,6 +52,9 @@ export function Toolbar({
         <button onClick={onOpenScenarios} title="Scenario Manager">
           Scenarios
         </button>
+        <button onClick={onOpenPlugins} title="Solver Modules">
+          Plugins
+        </button>
       </div>
       <div className="toolbar-right">
         <button
@@ -73,7 +78,7 @@ export function Toolbar({
         >
           &#x2699;
         </button>
-        <span className="toolbar-status">v0.7.0</span>
+        <span className="toolbar-status">v0.8.0</span>
       </div>
     </div>
   );

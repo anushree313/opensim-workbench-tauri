@@ -1,4 +1,5 @@
 pub mod coupling;
+pub mod thermo_mechanical;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

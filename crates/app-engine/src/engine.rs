@@ -1536,6 +1536,81 @@ impl AppEngine {
         Ok(self.build_result_view_dto(node_id, &result, &mesh, "VelocityMagnitude"))
     }
 
+    /// Run coupled thermo-mechanical analysis with CTE warpage for chip packages.
+    pub fn run_thermo_mechanical_analysis(
+        &self,
+        node_id: Uuid,
+        params: serde_json::Value,
+    ) -> Result<ResultViewDto, EngineError> {
+        // Build chip package mesh
+        let cp_params = core_geometry::primitives::ChipPackagePrimitive::default_package();
+        let mesh_params = core_mesh::mesher::MeshingParams {
+            max_element_size: params.get("max_element_size").and_then(|v| v.as_f64()).unwrap_or(1.0),
+            mesh_type: core_mesh::mesher::MeshType::Volume,
+        };
+        let mesh = core_mesh::mesher::generate_chip_package_mesh(&cp_params, &mesh_params)
+            .map_err(|e| EngineError::Solver(e.to_string()))?;
+
+        let library = core_materials::default_library();
+        let dba_name = params.get("dba_material").and_then(|v| v.as_str()).unwrap_or("Epoxy DBA");
+
+        // Build thermal material map
+        let mut thermal_mats = std::collections::HashMap::new();
+        let cu_k = core_materials::find_by_name(&library, "Copper Alloy C194")
+            .and_then(|m| m.properties.thermal_conductivity).unwrap_or(260.0);
+        let dba_k = core_materials::find_by_name(&library, dba_name)
+            .and_then(|m| m.properties.thermal_conductivity).unwrap_or(1.5);
+        let si_k = core_materials::find_by_name(&library, "Silicon")
+            .and_then(|m| m.properties.thermal_conductivity).unwrap_or(148.0);
+        thermal_mats.insert("leadframe".to_string(), physics_thermal::ThermalMaterial { conductivity: cu_k, specific_heat: 385.0, density: 8900.0 });
+        thermal_mats.insert("dba".to_string(), physics_thermal::ThermalMaterial { conductivity: dba_k, specific_heat: 500.0, density: 2000.0 });
+        thermal_mats.insert("die".to_string(), physics_thermal::ThermalMaterial { conductivity: si_k, specific_heat: 700.0, density: 2330.0 });
+
+        // Build structural material map
+        let mut struct_mats = std::collections::HashMap::new();
+        let cu = core_materials::find_by_name(&library, "Copper Alloy C194");
+        struct_mats.insert("leadframe".to_string(), physics_structural::IsotropicMaterial {
+            youngs_modulus: cu.and_then(|m| m.properties.youngs_modulus).unwrap_or(120e9),
+            poisson_ratio: cu.and_then(|m| m.properties.poissons_ratio).unwrap_or(0.34),
+            density: cu.and_then(|m| m.properties.density).unwrap_or(8900.0),
+        });
+        let dba = core_materials::find_by_name(&library, dba_name);
+        struct_mats.insert("dba".to_string(), physics_structural::IsotropicMaterial {
+            youngs_modulus: dba.and_then(|m| m.properties.youngs_modulus).unwrap_or(3.5e9),
+            poisson_ratio: dba.and_then(|m| m.properties.poissons_ratio).unwrap_or(0.35),
+            density: dba.and_then(|m| m.properties.density).unwrap_or(1200.0),
+        });
+        let si = core_materials::find_by_name(&library, "Silicon");
+        struct_mats.insert("die".to_string(), physics_structural::IsotropicMaterial {
+            youngs_modulus: si.and_then(|m| m.properties.youngs_modulus).unwrap_or(130e9),
+            poisson_ratio: si.and_then(|m| m.properties.poissons_ratio).unwrap_or(0.28),
+            density: si.and_then(|m| m.properties.density).unwrap_or(2330.0),
+        });
+
+        // Build CTE map
+        let mut cte_map = std::collections::HashMap::new();
+        cte_map.insert("leadframe".to_string(), cu.and_then(|m| m.properties.thermal_expansion).unwrap_or(17e-6));
+        cte_map.insert("dba".to_string(), dba.and_then(|m| m.properties.thermal_expansion).unwrap_or(65e-6));
+        cte_map.insert("die".to_string(), si.and_then(|m| m.properties.thermal_expansion).unwrap_or(2.6e-6));
+
+        let tm_params = core_multiphysics::thermo_mechanical::ThermoMechanicalParams {
+            ref_temperature: params.get("ref_temperature").and_then(|v| v.as_f64()).unwrap_or(25.0),
+            heat_flux: params.get("heat_flux").and_then(|v| v.as_f64()).unwrap_or(50000.0),
+            bottom_temp: params.get("bottom_temp").and_then(|v| v.as_f64()).unwrap_or(25.0),
+            shear_force: params.get("shear_force").and_then(|v| v.as_f64()).unwrap_or(0.0),
+            thermal_materials: physics_thermal::ThermalMaterialMap { element_set_materials: thermal_mats },
+            structural_materials: physics_structural::StructuralMaterialMap { element_set_materials: struct_mats },
+            cte_map: core_multiphysics::thermo_mechanical::CTEMap { element_set_cte: cte_map },
+        };
+
+        let result = core_multiphysics::thermo_mechanical::solve_thermo_mechanical(&mesh, &tm_params)
+            .map_err(|e| EngineError::Solver(e.to_string()))?;
+
+        // Build DTO with primary field (DisplacementMagnitude for deformation view)
+        let primary_field = params.get("primary_field").and_then(|v| v.as_str()).unwrap_or("DisplacementMagnitude");
+        Ok(self.build_result_view_dto(node_id, &result, &mesh, primary_field))
+    }
+
     /// Run EM (electrostatic or magnetostatic) analysis.
     pub fn run_em_analysis(
         &self,
