@@ -46,6 +46,133 @@
   opacity: 0.9;
 }
 
+/* Left config panel */
+.mesh-config-panel {
+  width: 250px;
+  min-width: 250px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.mesh-config-header {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.mesh-config-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mesh-config-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.mesh-config-slider {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.mesh-config-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.mesh-config-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+.mesh-config-slider-value {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mesh-config-suggestion {
+  text-align: center;
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+.mesh-config-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mesh-config-radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.mesh-config-radio input[type="radio"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.mesh-config-warning {
+  margin: 8px 12px;
+  padding: 6px 10px;
+  background: rgba(204, 204, 68, 0.15);
+  border: 1px solid rgba(204, 204, 68, 0.4);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #cccc44;
+  line-height: 1.4;
+}
+
+.mesh-config-generate {
+  margin: 12px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.mesh-config-generate:hover {
+  opacity: 0.9;
+}
+
 /* Stats panel on the right side of the canvas */
 .mesh-stats-panel {
   position: absolute;

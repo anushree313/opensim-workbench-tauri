@@ -30,6 +30,12 @@ export function Toolbox() {
     await addSystem(entry.kind, [x, y]);
   };
 
+  const handleDragStart = (e: React.DragEvent, entry: ToolboxEntry) => {
+    e.dataTransfer.setData("application/opensim-kind", entry.kind);
+    e.dataTransfer.setData("application/opensim-name", entry.display_name);
+    e.dataTransfer.effectAllowed = "copy";
+  };
+
   return (
     <div className="toolbox">
       <div className="toolbox-header">Toolbox</div>
@@ -40,8 +46,10 @@ export function Toolbox() {
             <div
               key={entry.kind}
               className="toolbox-item"
+              draggable
               onClick={() => handleAdd(entry)}
-              title={`Add ${entry.display_name} to schematic`}
+              onDragStart={(e) => handleDragStart(e, entry)}
+              title={`Drag or click to add ${entry.display_name}`}
             >
               <span className="toolbox-item-icon">
                 {getIcon(entry.category)}

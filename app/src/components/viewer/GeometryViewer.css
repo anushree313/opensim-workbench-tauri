@@ -106,3 +106,79 @@
 .body-remove:hover {
   color: #ff4444;
 }
+
+/* Body dimensions panel (below body list when a body is selected) */
+.body-dimensions-panel {
+  border-top: 1px solid var(--border);
+}
+
+.body-dimensions-header {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.body-dim-section {
+  padding: 6px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.body-dim-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.body-dim-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.body-dim-input {
+  width: 80px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 3px 6px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.body-dim-input:focus {
+  outline: none;
+  border-color: var(--border);
+}
+
+.body-dim-note {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.body-dim-edit-note {
+  padding: 8px 12px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.4;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}

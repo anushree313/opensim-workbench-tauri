@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/json-schema/main/tauri2.schema.json",
   "productName": "OpenSim Workbench",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.opensim.workbench",
   "build": {
     "frontendDist": "../app/dist",
@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ipc: http://ipc.localhost"
     }
   },
   "bundle": {

@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  outline: none;
 }
 
 .schematic-header {
@@ -31,6 +32,17 @@
     radial-gradient(circle, var(--border) 1px, transparent 1px);
   background-size: 24px 24px;
   min-height: 400px;
+  transition: background-color 0.2s;
+}
+
+.schematic-area.drag-over {
+  background-color: rgba(91, 141, 239, 0.05);
+  outline: 2px dashed var(--accent);
+  outline-offset: -4px;
+}
+
+.schematic-area.connecting-mode {
+  cursor: crosshair;
 }
 
 .schematic-empty {
@@ -40,6 +52,18 @@
   transform: translate(-50%, -50%);
   color: var(--text-muted);
   font-size: 14px;
+  text-align: center;
+}
+
+.schematic-drop-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+  pointer-events: none;
 }
 
 .schematic-connections {

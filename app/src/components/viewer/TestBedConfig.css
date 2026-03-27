@@ -1,0 +1,300 @@
+/* ================================================================
+   TestBedConfig – modal overlay + panel
+   ================================================================ */
+
+/* ---- overlay ---- */
+.tbc-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+/* ---- panel ---- */
+.tbc-panel {
+  width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary, #1a1e2e);
+  border: 1px solid var(--border, #2a2e3e);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+/* ---- header ---- */
+.tbc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border, #2a2e3e);
+  flex-shrink: 0;
+}
+
+.tbc-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #e0e4ec);
+}
+
+.tbc-analysis-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent, #6699cc);
+  background: rgba(102, 153, 204, 0.12);
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(102, 153, 204, 0.25);
+}
+
+/* ---- scrollable body ---- */
+.tbc-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+/* ---- sections ---- */
+.tbc-section {
+  margin-bottom: 20px;
+}
+
+.tbc-section:last-child {
+  margin-bottom: 0;
+}
+
+.tbc-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent, #6699cc);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ---- field rows ---- */
+.tbc-field {
+  margin-bottom: 10px;
+}
+
+.tbc-field label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted, #8890a4);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.tbc-field-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tbc-field-inline label {
+  margin-bottom: 0;
+  flex-shrink: 0;
+  width: 80px;
+}
+
+/* ---- inputs ---- */
+.tbc-input {
+  width: 100px;
+  padding: 5px 8px;
+  border: 1px solid var(--border, #2a2e3e);
+  border-radius: 4px;
+  background: var(--bg-tertiary, #141825);
+  color: var(--text-primary, #e0e4ec);
+  font-size: 12px;
+  font-family: monospace;
+  text-align: right;
+  box-sizing: border-box;
+}
+
+.tbc-input:focus {
+  border-color: var(--accent, #6699cc);
+  outline: none;
+}
+
+.tbc-input-full {
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.tbc-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tbc-unit {
+  font-size: 10px;
+  color: var(--text-muted, #8890a4);
+  min-width: 36px;
+}
+
+/* ---- selects ---- */
+.tbc-select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--border, #2a2e3e);
+  border-radius: 4px;
+  background: var(--bg-tertiary, #141825);
+  color: var(--text-primary, #e0e4ec);
+  font-size: 12px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.tbc-select:focus {
+  border-color: var(--accent, #6699cc);
+  outline: none;
+}
+
+/* ---- preset grid ---- */
+.tbc-preset-group {
+  margin-bottom: 12px;
+}
+
+.tbc-preset-group:last-child {
+  margin-bottom: 0;
+}
+
+.tbc-preset-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #8890a4);
+  margin-bottom: 6px;
+}
+
+.tbc-preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tbc-preset-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #2a2e3e);
+  border-radius: 6px;
+  background: var(--bg-tertiary, #141825);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tbc-preset-card:hover {
+  border-color: var(--accent, #6699cc);
+  background: rgba(102, 153, 204, 0.06);
+}
+
+.tbc-preset-active {
+  border-color: var(--accent, #6699cc);
+  background: rgba(102, 153, 204, 0.1);
+  box-shadow: 0 0 0 1px var(--accent, #6699cc);
+}
+
+.tbc-preset-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary, #e0e4ec);
+}
+
+.tbc-preset-summary {
+  font-size: 10px;
+  color: var(--text-muted, #8890a4);
+  line-height: 1.4;
+}
+
+/* ---- custom params ---- */
+.tbc-custom-params {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tbc-hint {
+  font-size: 11px;
+  color: var(--text-muted, #8890a4);
+  font-style: italic;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+/* ---- footer actions ---- */
+.tbc-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border, #2a2e3e);
+  flex-shrink: 0;
+}
+
+.tbc-btn {
+  padding: 7px 18px;
+  border: 1px solid var(--border, #2a2e3e);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.tbc-btn:hover {
+  opacity: 0.9;
+}
+
+.tbc-btn-cancel {
+  background: var(--bg-tertiary, #141825);
+  color: var(--text-secondary, #b0b8cc);
+}
+
+.tbc-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tbc-btn-apply {
+  background: var(--accent, #6699cc);
+  color: #fff;
+  border-color: var(--accent, #6699cc);
+}
+
+.tbc-btn-apply:hover {
+  opacity: 0.88;
+}
+
+/* ---- scrollbar inside body ---- */
+.tbc-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tbc-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tbc-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.tbc-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}

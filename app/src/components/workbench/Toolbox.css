@@ -32,8 +32,14 @@
   align-items: center;
   gap: 8px;
   padding: 5px 14px 5px 20px;
-  cursor: pointer;
+  cursor: grab;
   transition: background 0.15s;
+  user-select: none;
+}
+
+.toolbox-item:active {
+  cursor: grabbing;
+  opacity: 0.7;
 }
 
 .toolbox-item:hover {

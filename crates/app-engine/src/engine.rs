@@ -44,6 +44,52 @@ pub enum EngineError {
     Solver(String),
     #[error("Lock poisoned")]
     LockPoisoned,
+    #[error("Security: {0}")]
+    Security(String),
+    #[error("Validation: {0}")]
+    Validation(String),
+}
+
+// --- Security: path validation ---
+fn validate_project_path(path: &str) -> Result<PathBuf, EngineError> {
+    if path.is_empty() {
+        return Err(EngineError::Security("Empty path".into()));
+    }
+    if path.contains("..") {
+        return Err(EngineError::Security("Path traversal detected".into()));
+    }
+    let p = PathBuf::from(path);
+    if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
+        if ext.to_lowercase() != "osw" {
+            return Err(EngineError::Validation(format!("Invalid project file extension: .{ext} (expected .osw)")));
+        }
+    }
+    Ok(p)
+}
+
+fn validate_import_path(path: &str) -> Result<PathBuf, EngineError> {
+    if path.is_empty() {
+        return Err(EngineError::Security("Empty path".into()));
+    }
+    if path.contains("..") {
+        return Err(EngineError::Security("Path traversal detected".into()));
+    }
+    let p = PathBuf::from(path);
+    let ext = p.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()).unwrap_or_default();
+    if ext != "stl" && ext != "obj" {
+        return Err(EngineError::Validation(format!("Unsupported file format: .{ext} (expected .stl or .obj)")));
+    }
+    Ok(p)
+}
+
+fn validate_positive(value: f64, name: &str) -> Result<(), EngineError> {
+    if !value.is_finite() || value <= 0.0 {
+        return Err(EngineError::Validation(format!("{name} must be a positive finite number, got {value}")));
+    }
+    if value > 1e6 {
+        return Err(EngineError::Validation(format!("{name} exceeds maximum allowed value (1e6), got {value}")));
+    }
+    Ok(())
 }
 
 /// The central application engine, holding the current project state.
@@ -75,7 +121,7 @@ impl AppEngine {
     }
 
     pub fn open_project(&self, path: &str) -> Result<ProjectSchematicDto, EngineError> {
-        let p = PathBuf::from(path);
+        let p = validate_project_path(path)?;
         let graph = persistence::load_project(&p)?;
         let dto = self.graph_to_dto(&graph);
         *self.graph.lock().map_err(|_| EngineError::LockPoisoned)? = Some(graph);
@@ -91,7 +137,7 @@ impl AppEngine {
         let graph = graph_lock.as_ref().ok_or(EngineError::NoProject)?;
 
         let save_path = if let Some(p) = path {
-            PathBuf::from(p)
+            validate_project_path(p)?
         } else {
             self.project_path
                 .lock()
@@ -276,7 +322,8 @@ impl AppEngine {
         node_id: Uuid,
         file_path: &str,
     ) -> Result<GeometryViewDto, EngineError> {
-        let path = Path::new(file_path);
+        let validated = validate_import_path(file_path)?;
+        let path = validated.as_path();
         let model = core_geometry::import::import_file(path)?;
 
         let mut lock = self.graph.lock().map_err(|_| EngineError::LockPoisoned)?;

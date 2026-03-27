@@ -32,6 +32,33 @@ async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promi
   return invoke<T>(cmd, args);
 }
 
+// --- Toast notification system ---
+export interface ToastItem {
+  id: number;
+  message: string;
+  type: "success" | "error" | "warning";
+}
+let _toastIdCounter = 0;
+let _toasts: ToastItem[] = [];
+let _projectPath: string | null = null;
+let _isSaving = false;
+
+function addToast(message: string, type: ToastItem["type"]) {
+  const id = ++_toastIdCounter;
+  _toasts = [..._toasts, { id, message, type }];
+  notify();
+  const delay = type === "error" ? 5000 : 3000;
+  setTimeout(() => {
+    _toasts = _toasts.filter((t) => t.id !== id);
+    notify();
+  }, delay);
+}
+
+function removeToast(id: number) {
+  _toasts = _toasts.filter((t) => t.id !== id);
+  notify();
+}
+
 // -- Mock mesh generators for browser preview --
 function generateMockMesh(
   kind: string,
@@ -311,6 +338,19 @@ function generateMockResultView(nodeId: string): ResultViewDto {
   };
 }
 
+// Helper: generate cells for a given system kind (browser mock mode)
+function getCellsForKind(kind: string): Array<{ id: string; kind: CellKind; display_name: string; state: NodeState }> {
+  const mk = (name: string, cellKind: CellKind) => ({ id: `cell-${Date.now()}-${name}`, kind: cellKind, display_name: name, state: "NotConfigured" as NodeState });
+  if (kind === "Geometry") return [mk("Geometry", "Geometry")];
+  if (kind === "Mesh") return [mk("Mesh", "Model")];
+  if (kind === "EngineeringData") return [mk("Engineering Data", "EngineeringData")];
+  if (kind.includes("Structural") || kind.includes("Thermal") || kind === "Modal" || kind === "FluidFlow" || kind === "Magnetostatic" || kind === "Electrostatic")
+    return [mk("Engineering Data", "EngineeringData"), mk("Geometry", "Geometry"), mk("Model", "Model"), mk("Setup", "Setup"), mk("Solution", "Solution"), mk("Results", "Results")];
+  if (kind === "ChipPackageAnalysis")
+    return [mk("Engineering Data", "EngineeringData"), mk("Geometry", "Geometry"), mk("Setup", "Setup"), mk("Solution", "Solution")];
+  return [mk("Setup", "Setup"), mk("Results", "Results")];
+}
+
 // Simple store using module-level state and React hooks.
 let _schematic: ProjectSchematicDto | null = null;
 let _toolbox: ToolboxEntry[] = [];
@@ -335,56 +375,165 @@ export function useProjectStore() {
   }
 
   const newProject = useCallback(async (name: string) => {
-    _schematic = await safeInvoke<ProjectSchematicDto>("new_project", { name });
-    _toolbox = await safeInvoke<ToolboxEntry[]>("get_toolbox");
-    _geometryView = null;
-    notify();
+    try {
+      _schematic = await safeInvoke<ProjectSchematicDto>("new_project", { name });
+      _toolbox = await safeInvoke<ToolboxEntry[]>("get_toolbox");
+      _geometryView = null;
+      _projectPath = null;
+      notify();
+    } catch (e) {
+      addToast(`Failed to create project: ${e}`, "error");
+    }
   }, []);
 
   const openProject = useCallback(async (path: string) => {
-    _schematic = await safeInvoke<ProjectSchematicDto>("open_project", { path });
-    _geometryView = null;
-    notify();
+    try {
+      _schematic = await safeInvoke<ProjectSchematicDto>("open_project", { path });
+      _geometryView = null;
+      _projectPath = path;
+      notify();
+      addToast("Project opened", "success");
+    } catch (e) {
+      addToast(`Failed to open project: ${e}`, "error");
+    }
   }, []);
 
   const saveProject = useCallback(async (path?: string) => {
-    await safeInvoke<OperationResult>("save_project", { path: path ?? null });
+    try {
+      _isSaving = true;
+      notify();
+      const savePath = path ?? _projectPath ?? null;
+      await safeInvoke<OperationResult>("save_project", { path: savePath });
+      if (path) _projectPath = path;
+      _isSaving = false;
+      notify();
+      addToast("Project saved", "success");
+    } catch (e) {
+      _isSaving = false;
+      notify();
+      addToast(`Save failed: ${e}`, "error");
+    }
   }, []);
+
+  // Save with file dialog (for toolbar)
+  const handleSave = useCallback(async () => {
+    if (!isTauri) {
+      addToast("Save not available in preview mode", "warning");
+      return;
+    }
+    await saveProject();
+  }, [saveProject]);
+
+  // Open with file dialog (for toolbar)
+  const handleOpen = useCallback(async () => {
+    if (!isTauri) {
+      addToast("Open not available in preview mode", "warning");
+      return;
+    }
+    // In Tauri, prompt for path (dialog plugin needed, fallback to prompt)
+    const path = window.prompt("Enter project file path (.osw):");
+    if (path) await openProject(path);
+  }, [openProject]);
 
   const addSystem = useCallback(
     async (kind: SystemKind, position: [number, number]) => {
-      const node = await safeInvoke<SystemNodeDto>("add_system", {
-        kind,
-        position,
-      });
-      _schematic = await safeInvoke<ProjectSchematicDto>("get_schematic");
-      notify();
-      return node;
+      try {
+        if (!isTauri) {
+          // Browser mock: add to schematic directly
+          if (_schematic) {
+            const id = `node-${Date.now()}`;
+            const entry = _toolbox.find((e) => e.kind === kind);
+            const cells = getCellsForKind(kind);
+            _schematic = {
+              ..._schematic,
+              nodes: [
+                ..._schematic.nodes,
+                {
+                  id,
+                  kind,
+                  category: (entry?.category ?? "Analysis") as SystemCategory,
+                  name: entry?.display_name ?? kind,
+                  display_name: entry?.display_name ?? kind,
+                  state: "NotConfigured" as NodeState,
+                  cells,
+                  position,
+                },
+              ],
+            };
+            notify();
+            addToast(`Added ${entry?.display_name ?? kind}`, "success");
+          }
+          return;
+        }
+        await safeInvoke<SystemNodeDto>("add_system", { kind, position });
+        _schematic = await safeInvoke<ProjectSchematicDto>("get_schematic");
+        notify();
+      } catch (e) {
+        addToast(`Failed to add system: ${e}`, "error");
+      }
     },
     []
   );
 
   const removeSystem = useCallback(async (id: string) => {
-    await safeInvoke<OperationResult>("remove_system", { id });
-    _schematic = await safeInvoke<ProjectSchematicDto>("get_schematic");
-    if (_geometryView?.node_id === id) {
-      _geometryView = null;
+    try {
+      if (!isTauri) {
+        if (_schematic) {
+          _schematic = {
+            ..._schematic,
+            nodes: _schematic.nodes.filter((n) => n.id !== id),
+            connections: _schematic.connections.filter((c) => c.source !== id && c.target !== id),
+          };
+          notify();
+          addToast("System removed", "success");
+        }
+        return;
+      }
+      await safeInvoke<OperationResult>("remove_system", { id });
+      _schematic = await safeInvoke<ProjectSchematicDto>("get_schematic");
+      if (_geometryView?.node_id === id) _geometryView = null;
+      notify();
+    } catch (e) {
+      addToast(`Failed to remove system: ${e}`, "error");
     }
-    notify();
   }, []);
 
   const connectSystems = useCallback(
     async (source: string, target: string, kind: ConnectionKind) => {
-      await safeInvoke<OperationResult>("connect_systems", {
-        source,
-        target,
-        kind,
-      });
-      _schematic = await safeInvoke<ProjectSchematicDto>("get_schematic");
-      notify();
+      try {
+        if (!isTauri) {
+          if (_schematic) {
+            _schematic = {
+              ..._schematic,
+              connections: [
+                ..._schematic.connections,
+                { id: `conn-${Date.now()}`, source, target, kind },
+              ],
+            };
+            notify();
+            addToast("Connection created", "success");
+          }
+          return;
+        }
+        await safeInvoke<OperationResult>("connect_systems", { source, target, kind });
+        _schematic = await safeInvoke<ProjectSchematicDto>("get_schematic");
+        notify();
+      } catch (e) {
+        addToast(`Failed to connect: ${e}`, "error");
+      }
     },
     []
   );
+
+  const updateNodePosition = useCallback((nodeId: string, position: [number, number]) => {
+    if (_schematic) {
+      _schematic = {
+        ..._schematic,
+        nodes: _schematic.nodes.map((n) => n.id === nodeId ? { ...n, position } : n),
+      };
+      notify();
+    }
+  }, []);
 
   // -- Geometry operations --
 
@@ -795,6 +944,12 @@ export function useProjectStore() {
     meshView: _meshView,
     resultView: _resultView,
     deView: _deView,
+    toasts: _toasts,
+    removeToast,
+    isSaving: _isSaving,
+    handleSave,
+    handleOpen,
+    updateNodePosition,
     newProject,
     openProject,
     saveProject,

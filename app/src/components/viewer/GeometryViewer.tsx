@@ -6,7 +6,7 @@ import { BodyMesh } from "./BodyMesh";
 import { ViewerToolbar } from "./ViewerToolbar";
 import { PrimitiveDialog } from "./PrimitiveDialog";
 import { useProjectStore } from "../../stores/projectStore";
-import type { GeometryViewDto, PrimitiveKind } from "../../types/project";
+import type { GeometryViewDto, PrimitiveKind, BodyDto } from "../../types/project";
 import "./GeometryViewer.css";
 
 interface GeometryViewerProps {
@@ -78,6 +78,128 @@ function fitCamera(camera: THREE.Camera, scene: THREE.Scene) {
   }
 }
 
+interface DimensionField {
+  label: string;
+  value: number;
+}
+
+function getDimensionsForBody(body: BodyDto): DimensionField[] {
+  if (!body.bounding_box) return [];
+  const [[minX, minY, minZ], [maxX, maxY, maxZ]] = body.bounding_box;
+  const width = Math.abs(maxX - minX);
+  const height = Math.abs(maxY - minY);
+  const depth = Math.abs(maxZ - minZ);
+
+  switch (body.primitive_kind) {
+    case "Box":
+      return [
+        { label: "Width", value: parseFloat(width.toFixed(4)) },
+        { label: "Height", value: parseFloat(height.toFixed(4)) },
+        { label: "Depth", value: parseFloat(depth.toFixed(4)) },
+      ];
+    case "Cylinder": {
+      const radius = Math.max(width, depth) / 2;
+      return [
+        { label: "Radius", value: parseFloat(radius.toFixed(4)) },
+        { label: "Height", value: parseFloat(height.toFixed(4)) },
+      ];
+    }
+    case "Sphere": {
+      const r = Math.max(width, height, depth) / 2;
+      return [
+        { label: "Radius", value: parseFloat(r.toFixed(4)) },
+      ];
+    }
+    case "Plate":
+      return [
+        { label: "Width", value: parseFloat(width.toFixed(4)) },
+        { label: "Height", value: parseFloat(height.toFixed(4)) },
+        { label: "Thickness", value: parseFloat(depth.toFixed(4)) },
+      ];
+    default:
+      return [];
+  }
+}
+
+function getOriginForBody(body: BodyDto): [number, number, number] {
+  if (!body.bounding_box) return [0, 0, 0];
+  const [[minX, minY, minZ], [maxX, maxY, maxZ]] = body.bounding_box;
+  return [
+    parseFloat(((minX + maxX) / 2).toFixed(4)),
+    parseFloat(((minY + maxY) / 2).toFixed(4)),
+    parseFloat(((minZ + maxZ) / 2).toFixed(4)),
+  ];
+}
+
+function BodyDimensionsPanel({ body }: { body: BodyDto }) {
+  const dimensions = getDimensionsForBody(body);
+  const origin = getOriginForBody(body);
+  const hasPrimitive = !!body.primitive_kind;
+
+  return (
+    <div className="body-dimensions-panel">
+      <div className="body-dimensions-header">Dimensions</div>
+
+      {hasPrimitive && dimensions.length > 0 ? (
+        <>
+          {dimensions.map((dim) => (
+            <div className="body-dim-row" key={dim.label}>
+              <span className="body-dim-label">{dim.label}</span>
+              <input
+                type="number"
+                className="body-dim-input"
+                value={dim.value}
+                readOnly
+                tabIndex={-1}
+              />
+            </div>
+          ))}
+        </>
+      ) : (
+        <div className="body-dim-note">
+          Imported geometry — dimensions are read from bounding box.
+        </div>
+      )}
+
+      <div className="body-dim-section">Origin</div>
+      <div className="body-dim-row">
+        <span className="body-dim-label">X</span>
+        <input
+          type="number"
+          className="body-dim-input"
+          value={origin[0]}
+          readOnly
+          tabIndex={-1}
+        />
+      </div>
+      <div className="body-dim-row">
+        <span className="body-dim-label">Y</span>
+        <input
+          type="number"
+          className="body-dim-input"
+          value={origin[1]}
+          readOnly
+          tabIndex={-1}
+        />
+      </div>
+      <div className="body-dim-row">
+        <span className="body-dim-label">Z</span>
+        <input
+          type="number"
+          className="body-dim-input"
+          value={origin[2]}
+          readOnly
+          tabIndex={-1}
+        />
+      </div>
+
+      <div className="body-dim-edit-note">
+        Note: Edit dimensions by removing and re-adding the primitive
+      </div>
+    </div>
+  );
+}
+
 export function GeometryViewer({
   geometryView,
   nodeName,
@@ -132,6 +254,8 @@ export function GeometryViewer({
   }, []);
 
   const bodyCount = geometryView.model.bodies.length;
+  const selectedBody =
+    selectedBodyIdx !== null ? geometryView.model.bodies[selectedBodyIdx] ?? null : null;
 
   return (
     <div className="geometry-viewer">
@@ -215,6 +339,9 @@ export function GeometryViewer({
             </button>
           </div>
         ))}
+
+        {/* Dimensions panel for selected body */}
+        {selectedBody && <BodyDimensionsPanel body={selectedBody} />}
       </div>
 
       {dialogKind && (

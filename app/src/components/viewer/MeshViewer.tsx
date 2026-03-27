@@ -97,19 +97,37 @@ function MeshSurface({
   );
 }
 
+type ElementType = "Tet4" | "Tet10";
+
+function estimateBBoxSize(totalNodes: number): number {
+  // Rough estimate: assume cube with nodes ~ (size/spacing)^3
+  // For a cube of side L meshed with spacing s, nodes ~ (L/s)^3
+  // We just want a rough bbox size; use cube root of node count as proxy
+  const approxSide = Math.cbrt(Math.max(totalNodes, 1));
+  return approxSide * 0.1; // scale factor to get approximate bbox dimension
+}
+
 export function MeshViewer({ meshView, nodeName, onBack }: MeshViewerProps) {
   const { generateMesh } = useProjectStore();
   const [wireframe, setWireframe] = useState(true);
   const [showSurface, setShowSurface] = useState(true);
   const [fitTrigger, setFitTrigger] = useState(0);
   const [zoomTrigger, setZoomTrigger] = useState(0);
+  const [maxElementSize, setMaxElementSize] = useState(0.5);
+  const [elementType, setElementType] = useState<ElementType>("Tet4");
 
   const hasMesh = meshView.statistics.total_elements > 0;
+  const stats = meshView.statistics;
+
+  const suggestedSize = useMemo(() => {
+    const bboxEst = estimateBBoxSize(stats.total_nodes);
+    return Math.max(0.1, parseFloat((bboxEst / 20).toFixed(2)));
+  }, [stats.total_nodes]);
 
   const handleGenerateMesh = useCallback(async () => {
-    await generateMesh(meshView.node_id, { max_element_size: 0.5 });
+    await generateMesh(meshView.node_id, { max_element_size: maxElementSize });
     setFitTrigger((t) => t + 1);
-  }, [meshView.node_id, generateMesh]);
+  }, [meshView.node_id, generateMesh, maxElementSize]);
 
   const handleFitView = useCallback(() => {
     setFitTrigger((t) => t + 1);
@@ -123,7 +141,6 @@ export function MeshViewer({ meshView, nodeName, onBack }: MeshViewerProps) {
     setZoomTrigger((t) => t - 1);
   }, []);
 
-  const stats = meshView.statistics;
   const qualityPct = Math.round(stats.avg_quality * 100);
   const qualityColor =
     qualityPct >= 70 ? "#44cc88" : qualityPct >= 40 ? "#cccc44" : "#cc4444";
@@ -145,6 +162,68 @@ export function MeshViewer({ meshView, nodeName, onBack }: MeshViewerProps) {
       />
 
       <div className="mesh-canvas-container">
+        {/* Left config panel */}
+        <div className="mesh-config-panel">
+          <div className="mesh-config-header">Mesh Configuration</div>
+
+          <div className="mesh-config-section">
+            <label className="mesh-config-label">Max Element Size</label>
+            <input
+              type="range"
+              className="mesh-config-slider"
+              min={0.1}
+              max={5.0}
+              step={0.1}
+              value={maxElementSize}
+              onChange={(e) => setMaxElementSize(parseFloat(e.target.value))}
+            />
+            <div className="mesh-config-slider-value">
+              {maxElementSize.toFixed(1)}
+            </div>
+            {hasMesh && (
+              <div className="mesh-config-suggestion">
+                Suggested: {suggestedSize.toFixed(2)}
+              </div>
+            )}
+          </div>
+
+          <div className="mesh-config-section">
+            <label className="mesh-config-label">Element Type</label>
+            <div className="mesh-config-radio-group">
+              <label className="mesh-config-radio">
+                <input
+                  type="radio"
+                  name="elementType"
+                  value="Tet4"
+                  checked={elementType === "Tet4"}
+                  onChange={() => setElementType("Tet4")}
+                />
+                <span>Tet4</span>
+              </label>
+              <label className="mesh-config-radio">
+                <input
+                  type="radio"
+                  name="elementType"
+                  value="Tet10"
+                  checked={elementType === "Tet10"}
+                  onChange={() => setElementType("Tet10")}
+                />
+                <span>Tet10</span>
+              </label>
+            </div>
+          </div>
+
+          {hasMesh && stats.avg_quality < 0.5 && (
+            <div className="mesh-config-warning">
+              Mesh quality is low, consider reducing element size
+            </div>
+          )}
+
+          <button className="mesh-config-generate" onClick={handleGenerateMesh}>
+            Generate Mesh
+          </button>
+        </div>
+
         {!hasMesh ? (
           <div className="mesh-empty">
             <p>No mesh generated yet.</p>

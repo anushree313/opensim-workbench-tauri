@@ -5,6 +5,7 @@
 [![Release](https://img.shields.io/github/v/release/anushree313/opensim-workbench-tauri?style=flat-square)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue?style=flat-square)](#license)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)](#download)
+[![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-blueviolet?style=flat-square)](https://claude.ai/claude-code)
 
 OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the desktop as a native application. It features a project graph engine, interactive 3D viewers, FEA solvers for structural and thermal analysis, a chip package DBA (Die-Bonding Adhesive) analyzer, parametric design exploration, and a headless CLI for batch processing.
 
@@ -12,7 +13,7 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 
 ## Download
 
-**[Latest Release (v0.1.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
+**[Latest Release (v0.2.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
 
 | Platform | Download | Notes |
 |---|---|---|
@@ -398,3 +399,5 @@ This project is dual-licensed under MIT OR Apache-2.0.
 ## Acknowledgments
 
 Built with [Tauri](https://tauri.app), [React Three Fiber](https://docs.pmnd.rs/react-three-fiber), [nalgebra](https://nalgebra.org), and [Rhai](https://rhai.rs).
+
+This project was developed with the assistance of [Claude Code](https://claude.ai/claude-code) by Anthropic.

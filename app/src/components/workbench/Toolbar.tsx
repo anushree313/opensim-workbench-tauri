@@ -2,7 +2,7 @@ import { useProjectStore } from "../../stores/projectStore";
 import "./Toolbar.css";
 
 export function Toolbar() {
-  const { schematic, newProject, saveProject } = useProjectStore();
+  const { schematic, newProject, handleSave, handleOpen, isSaving } = useProjectStore();
 
   return (
     <div className="toolbar">
@@ -15,13 +15,16 @@ export function Toolbar() {
       </div>
       <div className="toolbar-center">
         <button onClick={() => newProject("New Project")}>New</button>
-        <button onClick={() => saveProject()}>Save</button>
+        <button onClick={handleOpen}>Open</button>
+        <button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? "Saving..." : "Save"}
+        </button>
         <button className="toolbar-run-btn" disabled>
           Run All
         </button>
       </div>
       <div className="toolbar-right">
-        <span className="toolbar-status">Phase 1 - Schematic Only</span>
+        <span className="toolbar-status">v0.2.0</span>
       </div>
     </div>
   );

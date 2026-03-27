@@ -6,24 +6,70 @@ This guide walks you through every feature of OpenSim Workbench, from first laun
 
 ## Table of Contents
 
-1. [Installation](#1-installation)
-2. [First Launch](#2-first-launch)
-3. [The Workbench Interface](#3-the-workbench-interface)
-4. [Working with the Project Schematic](#4-working-with-the-project-schematic)
-5. [Geometry](#5-geometry)
-6. [Meshing](#6-meshing)
-7. [Structural Analysis](#7-structural-analysis)
-8. [Thermal Analysis](#8-thermal-analysis)
-9. [Chip Package (DBA) Analysis](#9-chip-package-dba-analysis)
-10. [Design Exploration](#10-design-exploration)
-11. [Results Visualization](#11-results-visualization)
-12. [CLI Usage](#12-cli-usage)
-13. [Keyboard Shortcuts](#13-keyboard-shortcuts)
-14. [Troubleshooting](#14-troubleshooting)
+1. [System Requirements](#1-system-requirements)
+2. [Installation](#2-installation)
+3. [First Launch](#3-first-launch)
+4. [The Workbench Interface](#4-the-workbench-interface)
+5. [Working with the Project Schematic](#5-working-with-the-project-schematic)
+6. [Geometry](#6-geometry)
+7. [Meshing](#7-meshing)
+8. [Structural Analysis](#8-structural-analysis)
+9. [Thermal Analysis](#9-thermal-analysis)
+10. [Chip Package (DBA) Analysis](#10-chip-package-dba-analysis)
+11. [Test Bed Configuration](#11-test-bed-configuration)
+12. [Design Exploration](#12-design-exploration)
+13. [Results Visualization](#13-results-visualization)
+14. [Saving and Opening Projects](#14-saving-and-opening-projects)
+15. [CLI Usage](#15-cli-usage)
+16. [Keyboard Shortcuts](#16-keyboard-shortcuts)
+17. [Troubleshooting](#17-troubleshooting)
 
 ---
 
-## 1. Installation
+## 1. System Requirements
+
+### Minimum Requirements
+
+| Component | Windows | macOS | Linux |
+|---|---|---|---|
+| **OS** | Windows 10 (64-bit) 21H2+ | macOS 10.15 Catalina+ | Ubuntu 22.04+ or equivalent |
+| **CPU** | 2-core x86_64, 2.0 GHz | Apple Silicon (M1+) or Intel | x86_64, 2.0 GHz |
+| **RAM** | 4 GB | 4 GB | 4 GB |
+| **Disk** | 200 MB (app) + 1 GB (projects) | 200 MB (app) + 1 GB (projects) | 200 MB (app) + 1 GB (projects) |
+| **GPU** | DirectX 11 compatible | Metal compatible | OpenGL 3.3+ / Vulkan |
+| **Display** | 1280 x 800 | 1280 x 800 | 1280 x 800 |
+
+### Recommended Requirements
+
+| Component | Specification |
+|---|---|
+| **CPU** | 4+ cores, 3.0 GHz+ |
+| **RAM** | 8 GB+ (16 GB for large meshes) |
+| **GPU** | Dedicated GPU with 2+ GB VRAM for smooth 3D rendering |
+| **Display** | 1920 x 1080 or higher |
+| **Disk** | SSD recommended for faster project load/save |
+
+### Runtime Dependencies
+
+| Platform | Dependency | Notes |
+|---|---|---|
+| **Windows** | WebView2 Runtime | Included in Windows 10 21H2+. Older versions: [download](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
+| **Linux** | libwebkit2gtk-4.1 | `sudo apt install libwebkit2gtk-4.1-0` |
+| **Linux** | libappindicator3 | `sudo apt install libappindicator3-1` |
+| **macOS** | None | WebKit is built into macOS |
+
+### For Building from Source
+
+| Tool | Version |
+|---|---|
+| Rust | 1.70+ (via [rustup.rs](https://rustup.rs)) |
+| Node.js | 18+ (via [nodejs.org](https://nodejs.org)) |
+| Tauri CLI | `cargo install tauri-cli` |
+| npm | 9+ (included with Node.js) |
+
+---
+
+## 2. Installation
 
 ### Option A: Pre-built Binary
 
@@ -158,13 +204,32 @@ Displays log messages from the application:
 
 ---
 
-## 4. Working with the Project Schematic
+## 5. Working with the Project Schematic
 
-### Adding Systems
+### Adding Systems (Drag & Drop)
 
-1. Click a system type in the **Toolbox** (left panel)
-2. The system card appears in the schematic
-3. Connections to relevant existing systems are created automatically
+**Method 1 — Drag and Drop** (recommended):
+1. Grab a system type from the **Toolbox** (left panel)
+2. Drag it onto the schematic canvas
+3. Drop at the desired position
+4. The system card appears at the drop location
+
+**Method 2 — Click to Add:**
+1. Click a system type in the **Toolbox**
+2. The card appears at an auto-calculated grid position
+
+### Moving Cards
+
+Drag any card by its **header bar** to reposition it on the canvas. Connection lines follow the card as you drag.
+
+### Connecting Systems
+
+1. Hover over a system card to reveal the **connection ports** (small circles on card edges)
+2. Click the **output port** (right edge) of the source system
+3. A rubber-band line follows your mouse
+4. Click the **input port** (left edge) of the target system
+5. The connection is created automatically with the appropriate type (GeometryShare, MeshShare, etc.)
+6. Press **Escape** to cancel a connection in progress
 
 ### Removing Systems
 
@@ -463,7 +528,42 @@ Click the **+** button next to "Custom Materials" to add your own DBA material w
 
 ---
 
-## 10. Design Exploration
+## 11. Test Bed Configuration
+
+The Test Bed panel provides pre-defined industry-standard test configurations for each analysis type. Access it via the **Test Bed** button in any viewer's toolbar.
+
+### Environment Conditions
+
+| Parameter | Description | Default |
+|---|---|---|
+| Ambient Temperature | Background temperature | 25 C |
+| Mounting | Free / Fixed-Base / Clamped-All | Free |
+| Convection | Natural / Forced (with velocity) | Natural |
+
+### Load Scenario Presets
+
+**Chip Package (DBA):**
+- JEDEC Thermal Cycling: -40C to 125C, 10 C/min ramp, 15 min dwell
+- IPC Shear Test: 10 N force, 0.5 mm/min rate
+- Power Cycling: 60s on/off, 5 W power
+
+**Structural:**
+- Static Load Test: 1000 N applied force
+- Vibration Test: 20-2000 Hz, 5g acceleration
+- Drop Test: 1.5 m height, rigid surface
+
+**Thermal:**
+- Steady-State Heating: 50 kW/m2 heat flux
+- Thermal Cycling: -20C to 85C, 1000 cycles
+- Convective Cooling: h=25 W/m2K
+
+### Custom Configurations
+
+Create your own test configuration by editing any preset's parameters and giving it a name. Click "Apply Configuration" to load the parameters into the active viewer.
+
+---
+
+## 12. Design Exploration
 
 ### Design of Experiments (DOE)
 
@@ -532,7 +632,40 @@ The color legend on the right side of the viewport shows the numerical range.
 
 ---
 
-## 12. CLI Usage
+## 14. Saving and Opening Projects
+
+### Save (Ctrl+S)
+
+- Click **Save** in the toolbar or press Ctrl+S
+- First save prompts for a file path (`.osw` format)
+- Subsequent saves write to the same path automatically
+- A success toast notification confirms the save
+
+### Open
+
+- Click **Open** in the toolbar
+- Enter the path to an `.osw` project file
+- The project loads and the schematic is restored
+
+### Project Files
+
+Projects are saved as `.osw` files (JSON format) containing:
+- All system nodes and their positions
+- Connection graph
+- Geometry models and meshes
+- Solver configurations and results
+- Design exploration studies
+
+### Security
+
+- File paths are validated to prevent directory traversal attacks
+- Only `.osw` files can be opened as projects
+- Only `.stl` and `.obj` files can be imported as geometry
+- Content Security Policy (CSP) prevents code injection
+
+---
+
+## 15. CLI Usage
 
 The CLI allows batch processing without the GUI:
 

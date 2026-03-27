@@ -4,6 +4,7 @@ import { Toolbox } from "./Toolbox";
 import { SchematicCanvas } from "./SchematicCanvas";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { MessagesPanel } from "./MessagesPanel";
+import { ToastContainer } from "./Toast";
 import { GeometryViewer } from "../viewer/GeometryViewer";
 import { MeshViewer } from "../viewer/MeshViewer";
 import { ResultViewer } from "../viewer/ResultViewer";
@@ -80,8 +81,7 @@ export function Workbench() {
   // Find node names for viewers
   const geoNodeName =
     geometryView && schematic
-      ? schematic.nodes.find((n) => n.id === geometryView.node_id)?.name ??
-        "Geometry"
+      ? schematic.nodes.find((n) => n.id === geometryView.node_id)?.name ?? "Geometry"
       : "Geometry";
 
   const meshNodeName =
@@ -91,8 +91,7 @@ export function Workbench() {
 
   const resultNodeName =
     resultView && schematic
-      ? schematic.nodes.find((n) => n.id === resultView.node_id)?.name ??
-        "Results"
+      ? schematic.nodes.find((n) => n.id === resultView.node_id)?.name ?? "Results"
       : "Results";
 
   const deNodeName =
@@ -107,34 +106,15 @@ export function Workbench() {
         <Toolbox />
         <div className="workbench-center">
           {chipResult ? (
-            <ChipPackageViewer
-              nodeId={chipResult.node_id}
-              onBack={handleBackToSchematic}
-            />
+            <ChipPackageViewer nodeId={chipResult.node_id} onBack={handleBackToSchematic} />
           ) : deView ? (
-            <DEViewer
-              deView={deView}
-              nodeName={deNodeName}
-              onBack={handleBackToSchematic}
-            />
+            <DEViewer deView={deView} nodeName={deNodeName} onBack={handleBackToSchematic} />
           ) : resultView ? (
-            <ResultViewer
-              resultView={resultView}
-              nodeName={resultNodeName}
-              onBack={handleBackToSchematic}
-            />
+            <ResultViewer resultView={resultView} nodeName={resultNodeName} onBack={handleBackToSchematic} />
           ) : meshView ? (
-            <MeshViewer
-              meshView={meshView}
-              nodeName={meshNodeName}
-              onBack={handleBackToSchematic}
-            />
+            <MeshViewer meshView={meshView} nodeName={meshNodeName} onBack={handleBackToSchematic} />
           ) : geometryView ? (
-            <GeometryViewer
-              geometryView={geometryView}
-              nodeName={geoNodeName}
-              onBack={handleBackToSchematic}
-            />
+            <GeometryViewer geometryView={geometryView} nodeName={geoNodeName} onBack={handleBackToSchematic} />
           ) : (
             <SchematicCanvas
               selectedNodeId={selectedNode?.id ?? null}
@@ -148,11 +128,9 @@ export function Workbench() {
           )}
           <MessagesPanel />
         </div>
-        <PropertiesPanel
-          node={selectedNode}
-          geometryView={geometryView ?? undefined}
-        />
+        <PropertiesPanel node={selectedNode} geometryView={geometryView ?? undefined} />
       </div>
+      <ToastContainer />
     </div>
   );
 }
