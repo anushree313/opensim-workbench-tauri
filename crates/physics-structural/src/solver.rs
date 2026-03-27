@@ -6,7 +6,7 @@ use core_mesh::{ElementKind, Mesh};
 use core_post::{FieldData, FieldLocation, FieldType, ResultSet};
 
 use crate::tet4::{tet4_strain, tet4_stiffness, tet4_stress, von_mises};
-use crate::{BoundaryCondition, IsotropicMaterial, StructuralAnalysis};
+use crate::{BoundaryCondition, IsotropicMaterial, StructuralAnalysis, StructuralMaterialMap};
 
 #[derive(Debug, thiserror::Error)]
 pub enum SolverError {
@@ -211,6 +211,260 @@ pub fn solve_linear_static(
     // 7. Build ResultSet
     let mut result_set = ResultSet::new("Linear Static Results");
     result_set.time_steps = vec![0.0]; // Static analysis: single time step
+
+    result_set.fields.push(FieldData {
+        name: "Displacement".to_string(),
+        field_type: FieldType::Vector,
+        location: FieldLocation::Node,
+        values: vec![disp_field_values],
+    });
+
+    result_set.fields.push(FieldData {
+        name: "VonMises".to_string(),
+        field_type: FieldType::Scalar,
+        location: FieldLocation::Element,
+        values: vec![vm_values],
+    });
+
+    result_set.fields.push(FieldData {
+        name: "ShearStressXY".to_string(),
+        field_type: FieldType::Scalar,
+        location: FieldLocation::Element,
+        values: vec![shear_xy_values],
+    });
+
+    result_set.fields.push(FieldData {
+        name: "ShearStressYZ".to_string(),
+        field_type: FieldType::Scalar,
+        location: FieldLocation::Element,
+        values: vec![shear_yz_values],
+    });
+
+    result_set.fields.push(FieldData {
+        name: "ShearStressXZ".to_string(),
+        field_type: FieldType::Scalar,
+        location: FieldLocation::Element,
+        values: vec![shear_xz_values],
+    });
+
+    Ok(result_set)
+}
+
+/// Solve a linear static structural analysis with different materials per element set.
+///
+/// Same algorithm as `solve_linear_static` but uses per-element material lookup
+/// from the element_set → material mapping. Elements not in any set use the first
+/// material in the map as default.
+pub fn solve_linear_static_multi_material(
+    mesh: &Mesh,
+    analysis: &StructuralAnalysis,
+    material_map: &StructuralMaterialMap,
+) -> Result<ResultSet, SolverError> {
+    if mesh.nodes.is_empty() {
+        return Err(SolverError::EmptyMesh);
+    }
+
+    let tet_elements: Vec<_> = mesh
+        .elements
+        .iter()
+        .filter(|e| e.kind == ElementKind::Tet4)
+        .collect();
+
+    if tet_elements.is_empty() {
+        return Err(SolverError::NoTet4Elements);
+    }
+
+    // Build element ID → set name mapping
+    let mut elem_to_set: HashMap<u64, String> = HashMap::new();
+    for es in &mesh.element_sets {
+        for &eid in &es.element_ids {
+            elem_to_set.insert(eid, es.name.clone());
+        }
+    }
+
+    // Default material (first in map)
+    let default_material = material_map
+        .element_set_materials
+        .values()
+        .next()
+        .cloned()
+        .unwrap_or(IsotropicMaterial {
+            youngs_modulus: 200e9,
+            poisson_ratio: 0.3,
+            density: 7800.0,
+        });
+
+    // Build node ID → sequential index mapping
+    let node_id_to_idx: HashMap<u64, usize> = mesh
+        .nodes
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (n.id, i))
+        .collect();
+
+    let num_nodes = mesh.nodes.len();
+    let ndof = num_nodes * 3;
+
+    let node_sets: HashMap<&str, &[u64]> = mesh
+        .node_sets
+        .iter()
+        .map(|ns| (ns.name.as_str(), ns.node_ids.as_slice()))
+        .collect();
+
+    // 1. Assemble global stiffness matrix with per-element materials
+    let mut k_global = DMatrix::zeros(ndof, ndof);
+
+    for elem in &tet_elements {
+        if elem.node_ids.len() < 4 {
+            continue;
+        }
+
+        // Look up material for this element
+        let mat = elem_to_set
+            .get(&elem.id)
+            .and_then(|set| material_map.element_set_materials.get(set))
+            .unwrap_or(&default_material);
+
+        let mut elem_nodes = [[0.0_f64; 3]; 4];
+        let mut elem_dofs = [0_usize; 12];
+
+        for (i, &nid) in elem.node_ids.iter().take(4).enumerate() {
+            if let Some(&idx) = node_id_to_idx.get(&nid) {
+                elem_nodes[i] = mesh.nodes[idx].position;
+                elem_dofs[i * 3] = idx * 3;
+                elem_dofs[i * 3 + 1] = idx * 3 + 1;
+                elem_dofs[i * 3 + 2] = idx * 3 + 2;
+            }
+        }
+
+        let ke = tet4_stiffness(&elem_nodes, mat.youngs_modulus, mat.poisson_ratio);
+
+        for i in 0..12 {
+            for j in 0..12 {
+                k_global[(elem_dofs[i], elem_dofs[j])] += ke[(i, j)];
+            }
+        }
+    }
+
+    // 2. Build force vector
+    let mut f_global = DVector::zeros(ndof);
+
+    for bc in &analysis.boundary_conditions {
+        if let BoundaryCondition::Force { node_set, values } = bc {
+            let node_ids = resolve_node_set(node_set, &node_sets, mesh)?;
+            for &nid in &node_ids {
+                if let Some(&idx) = node_id_to_idx.get(&nid) {
+                    f_global[idx * 3] += values[0];
+                    f_global[idx * 3 + 1] += values[1];
+                    f_global[idx * 3 + 2] += values[2];
+                }
+            }
+        }
+    }
+
+    // 3. Apply displacement BCs (penalty method)
+    let penalty = 1e30;
+    let mut constrained_dofs: HashSet<usize> = HashSet::new();
+
+    for bc in &analysis.boundary_conditions {
+        match bc {
+            BoundaryCondition::FixedSupport { node_set } => {
+                let node_ids = resolve_node_set(node_set, &node_sets, mesh)?;
+                for &nid in &node_ids {
+                    if let Some(&idx) = node_id_to_idx.get(&nid) {
+                        for d in 0..3 {
+                            let dof = idx * 3 + d;
+                            k_global[(dof, dof)] += penalty;
+                            f_global[dof] = 0.0;
+                            constrained_dofs.insert(dof);
+                        }
+                    }
+                }
+            }
+            BoundaryCondition::Displacement { node_set, values } => {
+                let node_ids = resolve_node_set(node_set, &node_sets, mesh)?;
+                for &nid in &node_ids {
+                    if let Some(&idx) = node_id_to_idx.get(&nid) {
+                        for d in 0..3 {
+                            if let Some(val) = values[d] {
+                                let dof = idx * 3 + d;
+                                k_global[(dof, dof)] += penalty;
+                                f_global[dof] = penalty * val;
+                                constrained_dofs.insert(dof);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    if constrained_dofs.is_empty() {
+        return Err(SolverError::Unconstrained);
+    }
+
+    // 4. Solve
+    let lu = k_global.lu();
+    let u_global = lu.solve(&f_global).ok_or(SolverError::SingularMatrix)?;
+
+    // 5. Post-process displacements
+    let mut disp_field_values: Vec<Vec<f64>> = Vec::with_capacity(num_nodes);
+    for i in 0..num_nodes {
+        disp_field_values.push(vec![
+            u_global[i * 3],
+            u_global[i * 3 + 1],
+            u_global[i * 3 + 2],
+        ]);
+    }
+
+    // 6. Post-process stress per element (using per-element material)
+    let mut vm_values: Vec<Vec<f64>> = Vec::new();
+    let mut shear_xy_values: Vec<Vec<f64>> = Vec::new();
+    let mut shear_yz_values: Vec<Vec<f64>> = Vec::new();
+    let mut shear_xz_values: Vec<Vec<f64>> = Vec::new();
+
+    for elem in &tet_elements {
+        if elem.node_ids.len() < 4 {
+            vm_values.push(vec![0.0]);
+            shear_xy_values.push(vec![0.0]);
+            shear_yz_values.push(vec![0.0]);
+            shear_xz_values.push(vec![0.0]);
+            continue;
+        }
+
+        let mat = elem_to_set
+            .get(&elem.id)
+            .and_then(|set| material_map.element_set_materials.get(set))
+            .unwrap_or(&default_material);
+
+        let mut elem_nodes = [[0.0_f64; 3]; 4];
+        let mut elem_disps = [[0.0_f64; 3]; 4];
+
+        for (i, &nid) in elem.node_ids.iter().take(4).enumerate() {
+            if let Some(&idx) = node_id_to_idx.get(&nid) {
+                elem_nodes[i] = mesh.nodes[idx].position;
+                elem_disps[i] = [
+                    u_global[idx * 3],
+                    u_global[idx * 3 + 1],
+                    u_global[idx * 3 + 2],
+                ];
+            }
+        }
+
+        let strain = tet4_strain(&elem_nodes, &elem_disps);
+        let stress = tet4_stress(&strain, mat.youngs_modulus, mat.poisson_ratio);
+        let vm = von_mises(&stress);
+
+        vm_values.push(vec![vm]);
+        shear_xy_values.push(vec![stress[3]]);
+        shear_yz_values.push(vec![stress[4]]);
+        shear_xz_values.push(vec![stress[5]]);
+    }
+
+    // 7. Build ResultSet
+    let mut result_set = ResultSet::new("Multi-Material Static Results");
+    result_set.time_steps = vec![0.0];
 
     result_set.fields.push(FieldData {
         name: "Displacement".to_string(),

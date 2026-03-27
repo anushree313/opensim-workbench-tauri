@@ -1261,11 +1261,29 @@ impl AppEngine {
         library: &[core_materials::Material],
         params: &serde_json::Value,
     ) -> Result<core_post::ResultSet, EngineError> {
-        // Use DBA material for simplified single-material shear (conservative)
-        let mat = core_materials::find_by_name(library, dba_name);
-        let e = mat.and_then(|m| m.properties.youngs_modulus).unwrap_or(3.5e9);
-        let nu = mat.and_then(|m| m.properties.poissons_ratio).unwrap_or(0.35);
-        let density = mat.and_then(|m| m.properties.density).unwrap_or(1200.0);
+        // Multi-material structural analysis: each layer gets its own E/nu
+        let mut struct_mat_map = std::collections::HashMap::new();
+
+        let cu = core_materials::find_by_name(library, "Copper Alloy C194");
+        struct_mat_map.insert("leadframe".to_string(), physics_structural::IsotropicMaterial {
+            youngs_modulus: cu.and_then(|m| m.properties.youngs_modulus).unwrap_or(120e9),
+            poisson_ratio: cu.and_then(|m| m.properties.poissons_ratio).unwrap_or(0.34),
+            density: cu.and_then(|m| m.properties.density).unwrap_or(8900.0),
+        });
+
+        let dba = core_materials::find_by_name(library, dba_name);
+        struct_mat_map.insert("dba".to_string(), physics_structural::IsotropicMaterial {
+            youngs_modulus: dba.and_then(|m| m.properties.youngs_modulus).unwrap_or(3.5e9),
+            poisson_ratio: dba.and_then(|m| m.properties.poissons_ratio).unwrap_or(0.35),
+            density: dba.and_then(|m| m.properties.density).unwrap_or(1200.0),
+        });
+
+        let si = core_materials::find_by_name(library, "Silicon");
+        struct_mat_map.insert("die".to_string(), physics_structural::IsotropicMaterial {
+            youngs_modulus: si.and_then(|m| m.properties.youngs_modulus).unwrap_or(130e9),
+            poisson_ratio: si.and_then(|m| m.properties.poissons_ratio).unwrap_or(0.28),
+            density: si.and_then(|m| m.properties.density).unwrap_or(2330.0),
+        });
 
         let force = params.get("force").and_then(|v| v.as_f64()).unwrap_or(10.0);
 
@@ -1278,8 +1296,8 @@ impl AppEngine {
             .map(|ns| ns.node_ids.iter().map(|id| id.to_string()).collect::<Vec<_>>().join(","))
             .unwrap_or_default();
 
-        let iso_mat = physics_structural::IsotropicMaterial {
-            youngs_modulus: e, poisson_ratio: nu, density,
+        let material_map = physics_structural::StructuralMaterialMap {
+            element_set_materials: struct_mat_map,
         };
 
         let analysis = physics_structural::StructuralAnalysis {
@@ -1295,7 +1313,7 @@ impl AppEngine {
             solver_settings: Default::default(),
         };
 
-        physics_structural::solver::solve_linear_static(mesh, &analysis, &iso_mat)
+        physics_structural::solver::solve_linear_static_multi_material(mesh, &analysis, &material_map)
             .map_err(|e| EngineError::Solver(e.to_string()))
     }
 

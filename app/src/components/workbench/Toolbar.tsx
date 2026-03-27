@@ -73,7 +73,7 @@ export function Toolbar({
         >
           &#x2699;
         </button>
-        <span className="toolbar-status">v0.5.0</span>
+        <span className="toolbar-status">v0.6.0</span>
       </div>
     </div>
   );

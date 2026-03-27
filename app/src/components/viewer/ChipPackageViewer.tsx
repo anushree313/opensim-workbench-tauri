@@ -169,6 +169,10 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
         <div className="chip-toolbar-left">
           <button className="viewer-btn back-btn" onClick={onBack}>← Schematic</button>
           <span className="chip-title">Chip Package Analysis</span>
+          <span className="fem-badge" style={{
+            fontSize: "0.65rem", padding: "2px 6px", borderRadius: "6px",
+            background: "rgba(76,175,80,0.2)", color: "#4caf50", fontWeight: 600
+          }}>3D FEM</span>
           {stale && <span className="stale-badge">● Parameters changed</span>}
         </div>
         <div className="chip-toolbar-center">
