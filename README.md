@@ -2,7 +2,36 @@
 
 **A modular, open-source CAE (Computer-Aided Engineering) simulation platform built with Rust and React.**
 
+[![Release](https://img.shields.io/github/v/release/anushree313/opensim-workbench-tauri?style=flat-square)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue?style=flat-square)](#license)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)](#download)
+
 OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the desktop as a native application. It features a project graph engine, interactive 3D viewers, FEA solvers for structural and thermal analysis, a chip package DBA (Die-Bonding Adhesive) analyzer, parametric design exploration, and a headless CLI for batch processing.
+
+---
+
+## Download
+
+**[Latest Release (v0.1.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
+
+| Platform | Download | Notes |
+|---|---|---|
+| **Windows 10/11** (64-bit) | [`.msi` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.1.0_x64_en-US.msi) | Recommended. Standard MSI with Start Menu shortcut |
+| **Windows 10/11** (64-bit) | [`.exe` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.1.0_x64-setup.exe) | NSIS alternative if MSI doesn't work |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.1.0_aarch64.dmg) | Drag to Applications |
+| **macOS Intel** | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.1.0_x64.dmg) | Drag to Applications |
+| **Linux** (Debian/Ubuntu) | `.deb` | `sudo dpkg -i <file>.deb` — requires libwebkit2gtk-4.1 |
+| **Linux** (Any distro) | `.AppImage` | Portable — `chmod +x` and run directly |
+
+> See the [Releases page](https://github.com/anushree313/opensim-workbench-tauri/releases) for all versions and platform-specific notes.
+
+### System Requirements
+
+| Platform | Minimum |
+|---|---|
+| Windows | Windows 10 (64-bit), WebView2 (included in Win 10 21H2+) |
+| macOS | macOS 10.15 Catalina or later |
+| Linux | Ubuntu 22.04+, libwebkit2gtk-4.1, libappindicator3 |
 
 ---
 
@@ -188,8 +217,13 @@ Specialized analytical engine for semiconductor die-bonding adhesive evaluation:
 
 ## Getting Started
 
-### Prerequisites
+### Option 1: Download Pre-built Binary (Recommended)
 
+Download the installer for your platform from the [Releases page](https://github.com/anushree313/opensim-workbench-tauri/releases/latest) — see [Download](#download) section above. No build tools required.
+
+### Option 2: Build from Source
+
+**Prerequisites:**
 - **Rust** (1.70+): [rustup.rs](https://rustup.rs)
 - **Node.js** (18+): [nodejs.org](https://nodejs.org)
 - **Tauri CLI**: `cargo install tauri-cli`
@@ -341,6 +375,17 @@ opensim-workbench-tauri/
 - [ ] EM solver kernel (magnetostatic Poisson equation)
 - [ ] Remote HPC job submission (SSH/REST)
 - [ ] Plugin system for third-party solver integration
+
+---
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| **[README.md](README.md)** | Architecture, algorithms, tech stack, getting started |
+| **[USER_GUIDE.md](USER_GUIDE.md)** | Complete user guide — every feature, workflow, and tool explained |
+| **[CLAUDE.md](CLAUDE.md)** | Developer context for AI-assisted development |
+| **[Releases](https://github.com/anushree313/opensim-workbench-tauri/releases)** | Pre-built binaries for Windows, macOS, and Linux |
 
 ---
 
