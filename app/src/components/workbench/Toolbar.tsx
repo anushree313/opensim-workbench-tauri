@@ -1,8 +1,21 @@
 import { useProjectStore } from "../../stores/projectStore";
 import "./Toolbar.css";
 
-export function Toolbar() {
-  const { schematic, newProject, handleSave, handleOpen, isSaving } = useProjectStore();
+interface ToolbarProps {
+  chatOpen?: boolean;
+  onToggleChat?: () => void;
+  onToggleHistory?: () => void;
+  onOpenSettings?: () => void;
+}
+
+export function Toolbar({
+  chatOpen,
+  onToggleChat,
+  onToggleHistory,
+  onOpenSettings,
+}: ToolbarProps) {
+  const { schematic, newProject, handleSave, handleOpen, isSaving } =
+    useProjectStore();
 
   return (
     <div className="toolbar">
@@ -24,7 +37,28 @@ export function Toolbar() {
         </button>
       </div>
       <div className="toolbar-right">
-        <span className="toolbar-status">v0.2.0</span>
+        <button
+          className="toolbar-icon-btn"
+          onClick={onToggleHistory}
+          title="Simulation History"
+        >
+          &#x1F552;
+        </button>
+        <button
+          className={`toolbar-icon-btn ${chatOpen ? "toolbar-icon-active" : ""}`}
+          onClick={onToggleChat}
+          title="AI Chat"
+        >
+          &#x1F4AC;
+        </button>
+        <button
+          className="toolbar-icon-btn"
+          onClick={onOpenSettings}
+          title="AI Settings"
+        >
+          &#x2699;
+        </button>
+        <span className="toolbar-status">v0.3.0</span>
       </div>
     </div>
   );

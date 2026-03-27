@@ -13,7 +13,7 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 
 ## Download
 
-**[Latest Release (v0.2.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
+**[Latest Release (v0.3.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
 
 | Platform | Download | Notes |
 |---|---|---|
@@ -49,6 +49,10 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 | **Advanced DE** | Pareto frontier (multi-objective), genetic algorithm, Monte Carlo Six Sigma |
 | **Multiphysics** | Thermal-structural coupling framework (one-way sequential, two-way iterative) |
 | **HPC** | Async job queue with background thread execution |
+| **AI Assistant** | Interactive chat with multi-LLM support (Claude, OpenAI, Gemini, Perplexity) |
+| **Simulation History** | Auto-record every run with full config + results; side-by-side comparison |
+| **Report Generation** | HTML reports with config tables, results summaries, pass/fail criteria, audio narration |
+| **Test Bed Presets** | JEDEC, IPC, MIL-STD wire presets for one-click simulation setup |
 | **Scripting** | Rhai scripting engine for custom workflows |
 | **CLI** | Headless batch processing (`opensim new`, `opensim info`, `opensim list-systems`) |
 

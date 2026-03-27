@@ -17,12 +17,15 @@ This guide walks you through every feature of OpenSim Workbench, from first laun
 9. [Thermal Analysis](#9-thermal-analysis)
 10. [Chip Package (DBA) Analysis](#10-chip-package-dba-analysis)
 11. [Test Bed Configuration](#11-test-bed-configuration)
-12. [Design Exploration](#12-design-exploration)
-13. [Results Visualization](#13-results-visualization)
-14. [Saving and Opening Projects](#14-saving-and-opening-projects)
-15. [CLI Usage](#15-cli-usage)
-16. [Keyboard Shortcuts](#16-keyboard-shortcuts)
-17. [Troubleshooting](#17-troubleshooting)
+12. [AI Chat Assistant](#12-ai-chat-assistant)
+13. [Simulation History & Recording](#13-simulation-history--recording)
+14. [Report Generation](#14-report-generation)
+15. [Design Exploration](#15-design-exploration)
+16. [Results Visualization](#16-results-visualization)
+17. [Saving and Opening Projects](#17-saving-and-opening-projects)
+18. [CLI Usage](#18-cli-usage)
+19. [Keyboard Shortcuts](#19-keyboard-shortcuts)
+20. [Troubleshooting](#20-troubleshooting)
 
 ---
 
@@ -563,7 +566,94 @@ Create your own test configuration by editing any preset's parameters and giving
 
 ---
 
-## 12. Design Exploration
+## 12. AI Chat Assistant
+
+The AI-powered simulation assistant lets you control the workbench through natural language.
+
+### Opening the Chat Panel
+
+Click the **chat bubble icon** in the toolbar to open the assistant panel.
+
+### Configuring Your API Key
+
+1. Click the **gear icon** in the chat panel header
+2. Select a provider from the dropdown: **Claude** (Anthropic), **OpenAI**, **Gemini** (Google), or **Perplexity**
+3. Enter your API key for the selected provider
+4. Click **Save**
+
+### Using the Assistant
+
+Type natural language requests in the chat input. Examples:
+- "Run a cantilever beam test with 1kN load"
+- "Create a chip package thermal analysis with silver sinter DBA"
+- "Compare the last two simulation results"
+- "Generate a report for the most recent run"
+
+The AI can create test cases, run simulations, analyze results, and generate reports on your behalf.
+
+### Audio Playback
+
+Click the **speaker icon** next to any assistant response to hear it read aloud via text-to-speech.
+
+---
+
+## 13. Simulation History & Recording
+
+Every solver run is automatically recorded so you can review, compare, and report on past simulations.
+
+### Viewing History
+
+Click the **clock icon** in the toolbar to open the History panel. Each record shows:
+- Timestamp, solver type, and run name
+- Configuration snapshot (geometry, BCs, material)
+- Results snapshot (key output values)
+
+### Filtering and Searching
+
+Use the **solver type** dropdown to filter by analysis type, or type in the search box to find records by name or keyword.
+
+### Comparing Runs
+
+1. Select exactly **two** records using the checkboxes
+2. Click **Compare**
+3. A side-by-side diff view shows parameter differences highlighted in yellow and result deltas with percentage changes
+
+### Deleting Records
+
+Select one or more records and click **Delete** to remove them from history. This action cannot be undone.
+
+---
+
+## 14. Report Generation
+
+Generate detailed HTML reports from any simulation record.
+
+### Creating a Report
+
+1. Open the **History** panel (clock icon in toolbar)
+2. Select one or more records
+3. Click **Generate Report**
+
+### Report Contents
+
+Each report includes:
+- **Configuration summary** — solver type, geometry dimensions, material properties
+- **Input parameters table** — all boundary conditions and settings
+- **Results table** — output values with units
+- **Pass/fail criteria** — safety factors and limit checks (when applicable)
+
+### Printing and Downloading
+
+- Click the **Print** button to send the report to your system printer or save as PDF
+- Click **Download** to save the report as a standalone HTML file
+
+### Audio Narration
+
+Click the **Speak** button at the top of any report to hear a text-to-speech summary of the key findings.
+
+---
+
+## 15. Design Exploration
 
 ### Design of Experiments (DOE)
 
@@ -608,7 +698,7 @@ Monte Carlo-based process capability analysis:
 
 ---
 
-## 11. Results Visualization
+## 16. Results Visualization
 
 ### Color Mapping
 
@@ -632,7 +722,7 @@ The color legend on the right side of the viewport shows the numerical range.
 
 ---
 
-## 14. Saving and Opening Projects
+## 17. Saving and Opening Projects
 
 ### Save (Ctrl+S)
 
@@ -665,7 +755,7 @@ Projects are saved as `.osw` files (JSON format) containing:
 
 ---
 
-## 15. CLI Usage
+## 18. CLI Usage
 
 The CLI allows batch processing without the GUI:
 
@@ -705,7 +795,7 @@ Available system types:
 
 ---
 
-## 13. Keyboard Shortcuts
+## 19. Keyboard Shortcuts
 
 | Shortcut | Action |
 |---|---|
@@ -718,7 +808,7 @@ Available system types:
 
 ---
 
-## 14. Troubleshooting
+## 20. Troubleshooting
 
 ### Blank 3D viewport
 

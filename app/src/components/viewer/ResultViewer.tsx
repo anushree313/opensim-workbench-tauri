@@ -3,6 +3,8 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { ResultSurface } from "./ResultSurface";
+import { TestBedConfig } from "./TestBedConfig";
+import type { TestBedConfiguration } from "./TestBedConfig";
 import { useProjectStore } from "../../stores/projectStore";
 import type { ResultViewDto } from "../../types/project";
 import "./ResultViewer.css";
@@ -226,9 +228,10 @@ function SelectInput({ label, value, options, onChange }: SelectInputProps) {
 // --------------- main component ---------------
 
 export function ResultViewer({ resultView, nodeName, onBack }: ResultViewerProps) {
-  const { runSolver, changeResultField } = useProjectStore();
+  const { runSolver, runTestBedSimulation, changeResultField } = useProjectStore();
   const [fitTrigger, setFitTrigger] = useState(0);
   const [zoomTrigger, setZoomTrigger] = useState(0);
+  const [showTestBed, setShowTestBed] = useState(false);
 
   // Auto-detect analysis mode from node name
   const analysisMode: AnalysisMode = useMemo(() => {
@@ -386,6 +389,19 @@ export function ResultViewer({ resultView, nodeName, onBack }: ResultViewerProps
     setFitTrigger((t) => t + 1);
   }, [resultView.node_id, runSolver, buildSolverParams]);
 
+  const handleTestBedApply = useCallback(
+    async (config: TestBedConfiguration) => {
+      setShowTestBed(false);
+      try {
+        await runTestBedSimulation(resultView.node_id, config, analysisMode);
+        setFitTrigger((t) => t + 1);
+      } catch {
+        // Toast already shown by runTestBedSimulation
+      }
+    },
+    [resultView.node_id, runTestBedSimulation, analysisMode]
+  );
+
   const handleFieldChange = useCallback(
     (fieldName: string) => {
       changeResultField(resultView.node_id, fieldName);
@@ -415,6 +431,13 @@ export function ResultViewer({ resultView, nodeName, onBack }: ResultViewerProps
             style={{ background: "#cc6644", color: "white" }}
           >
             Solve
+          </button>
+          <button
+            className="viewer-btn"
+            onClick={() => setShowTestBed(true)}
+            style={{ background: "#5b8def", color: "white" }}
+          >
+            Test Bed
           </button>
         </div>
         <div className="viewer-toolbar-right">
@@ -635,6 +658,14 @@ export function ResultViewer({ resultView, nodeName, onBack }: ResultViewerProps
           </div>
         )}
       </div>
+
+      {showTestBed && (
+        <TestBedConfig
+          analysisType={analysisMode}
+          onApply={handleTestBedApply}
+          onClose={() => setShowTestBed(false)}
+        />
+      )}
     </div>
   );
 }

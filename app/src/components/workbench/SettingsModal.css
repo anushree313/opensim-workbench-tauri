@@ -1,0 +1,218 @@
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-panel {
+  background: var(--bg-secondary, #2a2a3e);
+  border-radius: 12px;
+  width: 500px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border, #3a3a55);
+}
+
+.settings-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #e0e0f0);
+}
+
+.settings-close {
+  background: none;
+  border: none;
+  color: var(--text-muted, #707090);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.settings-close:hover {
+  color: var(--text-primary, #e0e0f0);
+  background: none;
+}
+
+.settings-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border, #3a3a55);
+  padding: 0 20px;
+}
+
+.settings-tab {
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--text-muted, #707090);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 0.85rem;
+  transition: color 0.2s, border-bottom-color 0.2s;
+  border-radius: 0;
+}
+
+.settings-tab:hover {
+  color: var(--text-primary, #e0e0f0);
+  background: none;
+}
+
+.settings-tab.active {
+  color: var(--accent, #5b8def);
+  border-bottom-color: var(--accent, #5b8def);
+}
+
+.settings-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.settings-field {
+  margin-bottom: 16px;
+}
+
+.settings-field label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted, #707090);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.settings-field input,
+.settings-field select {
+  width: 100%;
+  background: var(--bg-tertiary, #333350);
+  color: var(--text-primary, #e0e0f0);
+  border: 1px solid var(--border, #3a3a55);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.settings-field input:focus,
+.settings-field select:focus {
+  border-color: var(--accent, #5b8def);
+}
+
+.settings-field .password-wrapper {
+  position: relative;
+}
+
+.settings-field .password-wrapper input {
+  padding-right: 56px;
+}
+
+.settings-field .password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted, #707090);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+}
+
+.settings-field .password-toggle:hover {
+  color: var(--text-primary, #e0e0f0);
+  background: none;
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border, #3a3a55);
+}
+
+.settings-footer button {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-save {
+  background: var(--accent, #5b8def);
+  color: white;
+  border: 1px solid var(--accent, #5b8def);
+}
+
+.btn-save:hover {
+  background: var(--accent-hover, #7aa5ff);
+  border-color: var(--accent-hover, #7aa5ff);
+}
+
+.btn-cancel {
+  background: var(--bg-tertiary, #333350);
+  color: var(--text-primary, #e0e0f0);
+  border: 1px solid var(--border, #3a3a55);
+}
+
+.btn-cancel:hover {
+  background: var(--accent, #5b8def);
+  color: white;
+}
+
+.btn-test {
+  background: transparent;
+  color: var(--accent, #5b8def);
+  border: 1px solid var(--accent, #5b8def);
+  border-radius: 6px;
+  padding: 6px 14px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-test:hover {
+  background: var(--accent, #5b8def);
+  color: white;
+}
+
+.btn-test:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-test-result {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: var(--bg-tertiary, #333350);
+  color: var(--text-secondary, #a0a0c0);
+}
+
+.settings-test-result.success {
+  color: var(--success, #4caf50);
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.settings-test-result.error {
+  color: var(--error, #f44336);
+  background: rgba(244, 67, 54, 0.1);
+}

@@ -5,17 +5,26 @@ import { SchematicCanvas } from "./SchematicCanvas";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { MessagesPanel } from "./MessagesPanel";
 import { ToastContainer } from "./Toast";
+import { ChatPanel } from "./ChatPanel";
+import { HistoryPanel } from "./HistoryPanel";
+import { CompareView } from "./CompareView";
+import { ReportView } from "./ReportView";
+import { SettingsModal } from "./SettingsModal";
 import { GeometryViewer } from "../viewer/GeometryViewer";
 import { MeshViewer } from "../viewer/MeshViewer";
 import { ResultViewer } from "../viewer/ResultViewer";
 import { DEViewer } from "../viewer/DEViewer";
 import { ChipPackageViewer } from "../viewer/ChipPackageViewer";
 import { useProjectStore } from "../../stores/projectStore";
+import { useSimulationStore } from "../../stores/simulationStore";
 import type { SystemNodeDto } from "../../types/project";
 import "./Workbench.css";
 
 export function Workbench() {
   const [selectedNode, setSelectedNode] = useState<SystemNodeDto | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const {
     schematic,
     geometryView,
@@ -34,6 +43,17 @@ export function Workbench() {
     openChipPackageViewer,
     closeChipPackageViewer,
   } = useProjectStore();
+
+  const {
+    historyOpen,
+    compareOpen,
+    reportOpen,
+    reportHtml,
+    toggleHistory,
+    closeCompare,
+    closeReport,
+    openReport,
+  } = useSimulationStore();
 
   const handleOpenGeometry = useCallback(
     async (node: SystemNodeDto) => {
@@ -101,7 +121,12 @@ export function Workbench() {
 
   return (
     <div className="workbench">
-      <Toolbar />
+      <Toolbar
+        chatOpen={chatOpen}
+        onToggleChat={() => setChatOpen((v) => !v)}
+        onToggleHistory={toggleHistory}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
       <div className="workbench-body">
         <Toolbox />
         <div className="workbench-center">
@@ -129,7 +154,22 @@ export function Workbench() {
           <MessagesPanel />
         </div>
         <PropertiesPanel node={selectedNode} geometryView={geometryView ?? undefined} />
+        {chatOpen && (
+          <ChatPanel onOpenSettings={() => setSettingsOpen(true)} />
+        )}
       </div>
+
+      {/* Modal overlays */}
+      {historyOpen && (
+        <HistoryPanel
+          onClose={toggleHistory}
+          onOpenReport={(html) => openReport(html)}
+        />
+      )}
+      {compareOpen && <CompareView onClose={closeCompare} />}
+      {reportOpen && <ReportView html={reportHtml} onClose={closeReport} />}
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+
       <ToastContainer />
     </div>
   );

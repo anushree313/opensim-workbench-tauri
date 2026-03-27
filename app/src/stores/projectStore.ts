@@ -43,7 +43,7 @@ let _toasts: ToastItem[] = [];
 let _projectPath: string | null = null;
 let _isSaving = false;
 
-function addToast(message: string, type: ToastItem["type"]) {
+export function addToast(message: string, type: ToastItem["type"]) {
   const id = ++_toastIdCounter;
   _toasts = [..._toasts, { id, message, type }];
   notify();
@@ -937,6 +937,96 @@ export function useProjectStore() {
     notify();
   }, []);
 
+  const runThermalSolver = useCallback(
+    async (nodeId: string, params: Record<string, unknown>) => {
+      if (!isTauri) {
+        // Browser mock: generate thermal-like result
+        const mock = generateMockResultView(nodeId);
+        _resultView = {
+          ...mock,
+          name: "Thermal Results",
+          field_name: "Temperature",
+          field_summaries: [
+            { field_name: "Temperature", location: "Node", min: 20.0, max: 100.0, mean: 55.3 },
+            { field_name: "HeatFlux", location: "Element", min: 0, max: 5e4, mean: 2.1e4 },
+          ],
+        };
+        notify();
+        return _resultView;
+      }
+      _resultView = await safeInvoke<ResultViewDto>("run_thermal_solver", { nodeId, params });
+      _schematic = await safeInvoke<ProjectSchematicDto>("get_schematic");
+      notify();
+      return _resultView;
+    },
+    []
+  );
+
+  const runTestBedSimulation = useCallback(
+    async (
+      nodeId: string,
+      config: import("../components/viewer/TestBedConfig").TestBedConfiguration,
+      analysisType: "structural" | "thermal"
+    ): Promise<{ resultView: ResultViewDto; recordId: string }> => {
+      const startTime = Date.now();
+      const nodeName = _schematic?.nodes.find((n) => n.id === nodeId)?.name ?? "Unknown";
+
+      // Translate TestBedConfig → solver params
+      const solverParams: Record<string, unknown> = {};
+      if (analysisType === "structural") {
+        solverParams.youngs_modulus = 200e9;
+        solverParams.poisson_ratio = 0.3;
+        solverParams.force_y = -(config.loadScenario.params.force ?? 1000);
+        if (config.loadScenario.params.pressure) {
+          solverParams.pressure = config.loadScenario.params.pressure;
+        }
+        solverParams.bc_type = config.environment.mounting;
+      } else {
+        solverParams.conductivity = 50;
+        solverParams.fixed_temperature_hot = config.loadScenario.params.T_max ?? config.loadScenario.params.heat_flux ? undefined : 100;
+        solverParams.fixed_temperature_cold = config.environment.ambientTemp;
+        solverParams.heat_flux = config.loadScenario.params.heat_flux ?? 0;
+        solverParams.convection_h = config.environment.convection === "Forced" ? 50 : 10;
+        solverParams.convection_t_inf = config.environment.ambientTemp;
+      }
+
+      let resultView: ResultViewDto;
+      try {
+        if (analysisType === "structural") {
+          await runSolver(nodeId, solverParams);
+        } else {
+          await runThermalSolver(nodeId, solverParams);
+        }
+        resultView = _resultView!;
+      } catch (e) {
+        addToast(`Simulation failed: ${e}`, "error");
+        throw e;
+      }
+
+      const duration = Date.now() - startTime;
+
+      // Record the simulation
+      const { recordSimulation } = await import("./simulationStore");
+      const recordId = recordSimulation({
+        timestamp: new Date().toISOString(),
+        duration_ms: duration,
+        solver_type: analysisType,
+        node_id: nodeId,
+        node_name: nodeName,
+        test_bed_config: config,
+        solver_params: solverParams,
+        material: analysisType === "structural" ? "Steel" : "Steel",
+        mesh_info: _meshView ? { total_nodes: _meshView.statistics.total_nodes, total_elements: _meshView.statistics.total_elements } : undefined,
+        field_summaries: resultView.field_summaries,
+        result_fields: resultView.field_summaries.map((f) => f.field_name),
+      });
+
+      addToast(`Simulation recorded (${(duration / 1000).toFixed(1)}s)`, "success");
+      return { resultView, recordId };
+    },
+    [runSolver]
+  );
+
   return {
     schematic: _schematic,
     toolbox: _toolbox,
@@ -967,6 +1057,8 @@ export function useProjectStore() {
     openResultViewer,
     closeResultViewer,
     runSolver,
+    runThermalSolver,
+    runTestBedSimulation,
     changeResultField,
     openDEViewer,
     closeDEViewer,
