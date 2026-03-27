@@ -13,16 +13,17 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 
 ## Download
 
-**[Latest Release (v0.3.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
+**[Latest Release (v0.7.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
 
 | Platform | Download | Notes |
 |---|---|---|
-| **Windows 10/11** (64-bit) | [`.msi` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.1.0_x64_en-US.msi) | Recommended. Standard MSI with Start Menu shortcut |
-| **Windows 10/11** (64-bit) | [`.exe` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.1.0_x64-setup.exe) | NSIS alternative if MSI doesn't work |
-| **macOS Apple Silicon** (M1/M2/M3/M4) | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.1.0_aarch64.dmg) | Drag to Applications |
-| **macOS Intel** | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.1.0_x64.dmg) | Drag to Applications |
-| **Linux** (Debian/Ubuntu) | `.deb` | `sudo dpkg -i <file>.deb` — requires libwebkit2gtk-4.1 |
-| **Linux** (Any distro) | `.AppImage` | Portable — `chmod +x` and run directly |
+| **Windows 10/11** (64-bit) | [`.msi` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_x64_en-US.msi) | Recommended. Standard MSI with Start Menu shortcut |
+| **Windows 10/11** (64-bit) | [`.exe` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_x64-setup.exe) | NSIS alternative if MSI doesn't work |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_aarch64.dmg) | Drag to Applications |
+| **macOS Intel** | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_x64.dmg) | Drag to Applications |
+| **Linux** (Debian/Ubuntu) | [`.deb`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_amd64.deb) | `sudo dpkg -i <file>.deb` — requires libwebkit2gtk-4.1 |
+| **Linux** (Any distro) | [`.AppImage`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.7.0_amd64.AppImage) | Portable — `chmod +x` and run directly |
+| **Linux** (RPM) | [`.rpm`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench-0.7.0-1.x86_64.rpm) | Fedora/RHEL/openSUSE |
 
 > See the [Releases page](https://github.com/anushree313/opensim-workbench-tauri/releases) for all versions and platform-specific notes.
 
