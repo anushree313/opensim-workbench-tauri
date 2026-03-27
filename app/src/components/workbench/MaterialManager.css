@@ -1,0 +1,256 @@
+.material-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.material-panel {
+  background: var(--bg-secondary, #2a2a3e);
+  border-radius: 12px;
+  width: 750px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.material-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.material-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.material-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.material-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.material-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.material-list {
+  width: 250px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.material-list-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.material-list-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.material-list-item.active {
+  background: var(--accent);
+  color: white;
+}
+
+.material-list-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.material-list-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.material-badge {
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.material-badge.builtin {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.material-badge.custom {
+  background: rgba(91, 141, 239, 0.2);
+  color: var(--accent);
+}
+
+.material-lock {
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+
+.material-delete-btn {
+  background: none;
+  border: none;
+  color: var(--error);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.material-delete-btn:hover {
+  background: rgba(244, 67, 54, 0.15);
+}
+
+.material-add-btn {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.material-add-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+}
+
+.material-editor {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.material-editor-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.material-field {
+  margin-bottom: 12px;
+}
+
+.material-field label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.material-field input {
+  width: 100%;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  outline: none;
+}
+
+.material-field input:focus {
+  border-color: var(--accent);
+}
+
+.material-field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.material-field input[type="color"] {
+  height: 36px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.material-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.material-save-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.material-save-btn:hover {
+  background: var(--accent-hover);
+}
+
+.material-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.material-delete-action-btn {
+  background: transparent;
+  color: var(--error);
+  border: 1px solid var(--error);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.material-delete-action-btn:hover {
+  background: rgba(244, 67, 54, 0.15);
+}
+
+.material-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.material-footer button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+}

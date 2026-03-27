@@ -34,6 +34,51 @@ export const MATERIALS: Record<string, ChipMaterial> = {
 
 export const DBA_MATERIALS = ["Epoxy DBA", "Solder SAC305", "Silver Sinter", "Conductive Adhesive"];
 
+export const BUILTIN_MATERIAL_NAMES = new Set(Object.keys(MATERIALS));
+
+const CUSTOM_MATERIALS_KEY = "opensim-custom-materials";
+
+export function loadCustomMaterials(): void {
+  try {
+    const raw = localStorage.getItem(CUSTOM_MATERIALS_KEY);
+    if (raw) {
+      const customs = JSON.parse(raw) as Record<string, ChipMaterial>;
+      for (const [name, mat] of Object.entries(customs)) {
+        MATERIALS[name] = mat;
+      }
+    }
+  } catch { /* ignore parse errors */ }
+}
+
+export function saveCustomMaterial(mat: ChipMaterial): void {
+  MATERIALS[mat.name] = mat;
+  _persistCustom();
+}
+
+export function deleteCustomMaterial(name: string): void {
+  if (BUILTIN_MATERIAL_NAMES.has(name)) return; // can't delete built-in
+  delete MATERIALS[name];
+  _persistCustom();
+}
+
+export function getCustomMaterials(): Record<string, ChipMaterial> {
+  const result: Record<string, ChipMaterial> = {};
+  for (const [name, mat] of Object.entries(MATERIALS)) {
+    if (!BUILTIN_MATERIAL_NAMES.has(name)) {
+      result[name] = mat;
+    }
+  }
+  return result;
+}
+
+function _persistCustom(): void {
+  const customs = getCustomMaterials();
+  localStorage.setItem(CUSTOM_MATERIALS_KEY, JSON.stringify(customs));
+}
+
+// Load on module init
+loadCustomMaterials();
+
 // ============================================================
 // Geometry Parameters
 // ============================================================

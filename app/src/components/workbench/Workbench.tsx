@@ -12,6 +12,8 @@ import { ReportView } from "./ReportView";
 import { SettingsModal } from "./SettingsModal";
 import { TestLibraryBrowser } from "./TestLibraryBrowser";
 import { TestSuiteRunner } from "./TestSuiteRunner";
+import { MaterialManager } from "./MaterialManager";
+import { ScenarioManager } from "./ScenarioManager";
 import { GeometryViewer } from "../viewer/GeometryViewer";
 import { MeshViewer } from "../viewer/MeshViewer";
 import { ResultViewer } from "../viewer/ResultViewer";
@@ -27,6 +29,8 @@ export function Workbench() {
   const [chatOpen, setChatOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [testLibraryOpen, setTestLibraryOpen] = useState(false);
+  const [materialsOpen, setMaterialsOpen] = useState(false);
+  const [scenariosOpen, setScenariosOpen] = useState(false);
 
   const {
     schematic,
@@ -134,6 +138,8 @@ export function Workbench() {
         onToggleHistory={toggleHistory}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenTestLibrary={() => setTestLibraryOpen(true)}
+        onOpenMaterials={() => setMaterialsOpen(true)}
+        onOpenScenarios={() => setScenariosOpen(true)}
       />
       <div className="workbench-body">
         <Toolbox />
@@ -191,6 +197,8 @@ export function Workbench() {
           onOpenReport={(html: string) => openReport(html)}
         />
       )}
+      {materialsOpen && <MaterialManager onClose={() => setMaterialsOpen(false)} />}
+      {scenariosOpen && <ScenarioManager onClose={() => setScenariosOpen(false)} />}
 
       <ToastContainer />
     </div>

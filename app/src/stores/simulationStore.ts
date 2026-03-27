@@ -14,6 +14,83 @@ let _reportHtml = "";
 let _suiteRunnerOpen = false;
 let _suiteScenarioId = "";
 
+/* ---- Scenario Persistence --------------------------------------- */
+
+export interface SavedScenario {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  recordCount: number;
+  records: SimulationRecord[];
+}
+
+const SCENARIOS_KEY = "opensim-saved-scenarios";
+
+let _savedScenarios: SavedScenario[] = loadScenariosFromStorage();
+
+function loadScenariosFromStorage(): SavedScenario[] {
+  try {
+    const raw = localStorage.getItem(SCENARIOS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function persistScenarios(): void {
+  localStorage.setItem(SCENARIOS_KEY, JSON.stringify(_savedScenarios));
+}
+
+export function saveScenario(name: string, description: string): string {
+  const id = crypto.randomUUID();
+  const scenario: SavedScenario = {
+    id,
+    name,
+    description,
+    createdAt: new Date().toISOString(),
+    recordCount: _records.length,
+    records: [..._records],
+  };
+  _savedScenarios = [..._savedScenarios, scenario];
+  persistScenarios();
+  notify();
+  return id;
+}
+
+export function loadScenario(id: string): boolean {
+  const scenario = _savedScenarios.find((s) => s.id === id);
+  if (!scenario) return false;
+  _records = [...scenario.records];
+  _selectedRecordIds = [];
+  notify();
+  return true;
+}
+
+export function deleteScenario(id: string): void {
+  _savedScenarios = _savedScenarios.filter((s) => s.id !== id);
+  persistScenarios();
+  notify();
+}
+
+export function getSavedScenarios(): SavedScenario[] {
+  return _savedScenarios;
+}
+
+export function exportScenarioJSON(id: string): string | null {
+  const scenario = _savedScenarios.find((s) => s.id === id);
+  return scenario ? JSON.stringify(scenario, null, 2) : null;
+}
+
+export function importScenarioJSON(json: string): boolean {
+  try {
+    const scenario = JSON.parse(json) as SavedScenario;
+    scenario.id = crypto.randomUUID(); // new ID to avoid conflicts
+    _savedScenarios = [..._savedScenarios, scenario];
+    persistScenarios();
+    notify();
+    return true;
+  } catch { return false; }
+}
+
 /* ================================================================== */
 /*  Listener / notify pattern                                          */
 /* ================================================================== */
@@ -236,5 +313,13 @@ export function useSimulationStore() {
     suiteScenarioId: _suiteScenarioId,
     openSuiteRunner: useCallback((scenarioId: string) => { openSuiteRunner(scenarioId); }, []),
     closeSuiteRunner: useCallback(() => { closeSuiteRunner(); }, []),
+
+    // Scenarios
+    savedScenarios: _savedScenarios,
+    saveScenario: useCallback((name: string, desc: string) => saveScenario(name, desc), []),
+    loadScenario: useCallback((id: string) => loadScenario(id), []),
+    deleteScenario: useCallback((id: string) => deleteScenario(id), []),
+    exportScenarioJSON: useCallback((id: string) => exportScenarioJSON(id), []),
+    importScenarioJSON: useCallback((json: string) => importScenarioJSON(json), []),
   };
 }

@@ -369,13 +369,13 @@ opensim-workbench-tauri/
 
 ## Roadmap
 
+- [x] Transient thermal analysis — lumped model with backward Euler, transient history plot (v0.2.0)
+- [x] Experimental correlation panel — simulation vs. measured data with RMSE (v0.2.0)
+- [x] Batch parameter sweep — runParameterSweep + TestSuiteRunner (v0.4.0)
+- [x] Material CRUD UI — add/edit/delete custom materials with JSON import/export (v0.5.0)
+- [x] Result export — CSV export for field summaries, simulation records, vertex data (v0.5.0)
+- [x] Scenario save/load — snapshot current session, restore, import/export JSON (v0.5.0)
 - [ ] FEM-based chip package solver (replace 1D analytical with 2D/3D elements)
-- [ ] Transient thermal analysis (time-stepping)
-- [ ] Material CRUD UI (add/edit/delete custom materials)
-- [ ] Experimental correlation panel (simulation vs. measured data)
-- [ ] Batch parameter sweep
-- [ ] Result export (CSV for nodal/element data)
-- [ ] Scenario save/load (project versioning)
 - [ ] CFD solver kernel (incompressible Navier-Stokes)
 - [ ] EM solver kernel (magnetostatic Poisson equation)
 - [ ] Remote HPC job submission (SSH/REST)

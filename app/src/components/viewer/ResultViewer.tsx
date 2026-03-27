@@ -6,6 +6,7 @@ import { ResultSurface } from "./ResultSurface";
 import { TestBedConfig } from "./TestBedConfig";
 import type { TestBedConfiguration } from "./TestBedConfig";
 import { useProjectStore } from "../../stores/projectStore";
+import { exportFieldSummariesCSV, downloadCSV } from "../../utils/csvExporter";
 import type { ResultViewDto } from "../../types/project";
 import "./ResultViewer.css";
 
@@ -438,6 +439,15 @@ export function ResultViewer({ resultView, nodeName, onBack }: ResultViewerProps
             style={{ background: "#5b8def", color: "white" }}
           >
             Test Bed
+          </button>
+          <button
+            className="viewer-btn"
+            onClick={() => {
+              const csv = exportFieldSummariesCSV(resultView.field_summaries, nodeName);
+              downloadCSV(csv, `${nodeName.replace(/\s+/g, "_")}_results.csv`);
+            }}
+          >
+            Export CSV
           </button>
         </div>
         <div className="viewer-toolbar-right">
