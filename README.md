@@ -13,17 +13,17 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 
 ## Download
 
-**[Latest Release (v0.8.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
+**[Latest Release (v1.0.0)](https://github.com/anushree313/opensim-workbench-tauri/releases/latest)**
 
 | Platform | Download | Notes |
 |---|---|---|
-| **Windows 10/11** (64-bit) | [`.msi` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_x64_en-US.msi) | Recommended. Standard MSI with Start Menu shortcut |
-| **Windows 10/11** (64-bit) | [`.exe` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_x64-setup.exe) | NSIS alternative if MSI doesn't work |
-| **macOS Apple Silicon** (M1/M2/M3/M4) | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_aarch64.dmg) | Drag to Applications |
-| **macOS Intel** | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_x64.dmg) | Drag to Applications |
-| **Linux** (Debian/Ubuntu) | [`.deb`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_amd64.deb) | `sudo dpkg -i <file>.deb` — requires libwebkit2gtk-4.1 |
-| **Linux** (Any distro) | [`.AppImage`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_0.8.0_amd64.AppImage) | Portable — `chmod +x` and run directly |
-| **Linux** (RPM) | [`.rpm`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench-0.8.0-1.x86_64.rpm) | Fedora/RHEL/openSUSE |
+| **Windows 10/11** (64-bit) | [`.msi` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_1.0.0_x64_en-US.msi) | Recommended. Standard MSI with Start Menu shortcut |
+| **Windows 10/11** (64-bit) | [`.exe` installer](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_1.0.0_x64-setup.exe) | NSIS alternative if MSI doesn't work |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_1.0.0_aarch64.dmg) | Drag to Applications |
+| **macOS Intel** | [`.dmg`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_1.0.0_x64.dmg) | Drag to Applications |
+| **Linux** (Debian/Ubuntu) | [`.deb`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_1.0.0_amd64.deb) | `sudo dpkg -i <file>.deb` — requires libwebkit2gtk-4.1 |
+| **Linux** (Any distro) | [`.AppImage`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench_1.0.0_amd64.AppImage) | Portable — `chmod +x` and run directly |
+| **Linux** (RPM) | [`.rpm`](https://github.com/anushree313/opensim-workbench-tauri/releases/latest/download/OpenSim.Workbench-1.0.0-1.x86_64.rpm) | Fedora/RHEL/openSUSE |
 
 > See the [Releases page](https://github.com/anushree313/opensim-workbench-tauri/releases) for all versions and platform-specific notes.
 
@@ -41,8 +41,8 @@ OpenSim Workbench brings Ansys Workbench-style multiphysics simulation to the de
 
 | Domain | Capabilities |
 |---|---|
-| **Structural FEA** | Linear static analysis, Tet4 elements, Von Mises stress, displacement fields |
-| **Thermal FEA** | Steady-state heat conduction, Tet4 thermal elements, temperature & heat flux fields |
+| **Structural FEA** | Linear static analysis, **modal/vibration analysis** (eigenvalue solver), Tet4 elements, Von Mises stress, displacement fields, natural frequencies & mode shapes |
+| **Thermal FEA** | Steady-state heat conduction, **transient thermal** (implicit Euler time-stepping), Tet4 thermal elements, temperature & heat flux fields, time-history results |
 | **Chip Package DBA** | Fourier thermal resistance, shear/bending analysis, CTE mismatch, 4-material comparison |
 | **Geometry** | Box, Cylinder, Sphere, Plate primitives; STL/OBJ import; tessellation |
 | **Meshing** | Surface mesh from tessellation, Tet4/Tet10 volume meshing, quality metrics |
@@ -395,6 +395,11 @@ opensim-workbench-tauri/
 - [x] EM solver kernel — electrostatic Poisson + magnetostatic scalar potential (v0.7.0)
 - [x] Remote HPC job submission — SLURM/PBS/LSF script generation, remote job tracking (v0.7.0)
 - [x] Plugin system — SolverPlugin trait, JSON manifest, plugin registry (v0.7.0)
+- [x] Ansys-style plugin manager — solver module visualization, data coupling graph (v0.8.0)
+- [x] Chip deformation analysis — thermo-mechanical CTE solver, 5 stress scenarios, warpage reporting (v0.8.0)
+- [x] FEM chip package solver — multi-material with real mesh, full deformation viewer (v0.9.0)
+- [x] Modal/vibration analysis — eigenvalue solver, consistent mass matrix, natural frequencies & mode shapes (v1.0.0)
+- [x] Transient thermal FEM — implicit Euler time-stepping, capacitance matrix, time-history temperature fields (v1.0.0)
 
 ---
 

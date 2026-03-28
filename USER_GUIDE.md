@@ -387,6 +387,41 @@ The solver produces these result fields:
 
 Results are displayed as pseudo-color maps on the 3D mesh with a color legend showing the value range.
 
+### Modal / Vibration Analysis
+
+Modal analysis computes the natural frequencies and mode shapes of a structure — critical for vibration qualification (JEDEC drop test, random vibration, thermal cycling).
+
+**Setup:**
+1. Double-click the **Structural Analysis** card
+2. Select **Modal** analysis type from the preset dropdown
+3. Configure the number of modes to extract (default: 6)
+
+**Parameters:**
+
+| Parameter | Default | Description |
+|---|---|---|
+| **Number of modes** | 6 | How many eigenvalues/eigenvectors to extract |
+| **Young's modulus** | 200 GPa | Material stiffness |
+| **Poisson's ratio** | 0.3 | Lateral contraction ratio |
+| **Density** | 7800 kg/m3 | Mass density (required for mass matrix) |
+
+**Algorithm:** The solver assembles global stiffness (K) and mass (M) matrices from Tet4 elements, transforms to a standard eigenvalue problem via M^(-1)K, then uses symmetric eigendecomposition to extract eigenvalues and eigenvectors. Natural frequencies are computed as f = sqrt(lambda) / (2*pi) Hz.
+
+**Results:**
+
+| Field | Unit | Description |
+|---|---|---|
+| **NaturalFrequency** | Hz | Resonant frequency for each mode |
+| **ModeShape** | — | Normalized displacement eigenvector per mode (unit max) |
+
+Each mode is stored as a separate time step in the result set, allowing you to step through mode shapes in the viewer.
+
+**Interpreting Results:**
+- **Mode 1** is the fundamental frequency — the lowest natural frequency of the structure
+- Mode shapes show how the structure deforms at each frequency
+- Frequencies near operational vibration spectra indicate potential resonance risk
+- For chip packages, compare against JEDEC JESD22-B111 (board-level drop test) frequency bands
+
 ---
 
 ## 8. Thermal Analysis
@@ -411,6 +446,43 @@ Results are displayed as pseudo-color maps on the 3D mesh with a color legend sh
 |---|---|---|
 | **Temperature** | C | Scalar temperature at each node |
 | **Heat Flux** | W/m2 | Vector field showing heat flow direction and magnitude |
+
+### Transient Thermal Analysis
+
+Transient thermal analysis simulates temperature evolution over time — essential for reflow profiles, power cycling, and thermal shock qualification.
+
+**Setup:**
+1. Double-click the **Thermal Analysis** card
+2. Select **Transient** analysis type
+3. Configure time parameters and boundary conditions
+
+**Parameters:**
+
+| Parameter | Default | Description |
+|---|---|---|
+| **Time step (dt)** | 0.1 s | Time increment between solutions |
+| **End time** | 1.0 s | Total simulation duration |
+| **Conductivity** | 50 W/mK | Thermal conductivity |
+| **Specific heat** | 500 J/kgK | Heat capacity |
+| **Density** | 7800 kg/m3 | Mass density (for thermal inertia) |
+| **Fixed temperature** | 25 C | Temperature BC on constrained surfaces |
+| **Heat flux** | 50000 W/m2 | Applied heat load |
+
+**Algorithm:** The solver uses implicit (backward) Euler time-stepping:
+- Assembles conductivity matrix K and capacitance matrix C from Tet4 elements
+- System: (C/dt + K) * T_{n+1} = (C/dt) * T_n + f
+- LU factorization is performed once; each time step is a single back-substitution
+- Up to 1000 time steps supported
+
+**Results:**
+- Temperature field at each time step, viewable as an animation
+- Time-history data stored in `time_steps[]` array
+
+**Applications:**
+- **Reflow soldering:** Simulate temperature ramp from room temp to 260C peak, verify component survival
+- **Power cycling:** Periodic heat-on/heat-off to assess thermal fatigue
+- **Thermal shock:** Step change from -55C to +125C (MIL-STD-883 Method 1010)
+- **Chip power dissipation:** Model die heat spreading through DBA substrate over time
 
 ---
 
