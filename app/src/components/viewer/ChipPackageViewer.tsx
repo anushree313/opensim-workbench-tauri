@@ -12,6 +12,8 @@ import {
   type TransientParams, type TransientResult, type SweepResult,
   type ExperimentalData, type SweepableParam,
 } from "../../utils/chipCalculations";
+import { DeformationViewer } from "./DeformationViewer";
+import { DEFORMATION_SCENARIOS } from "../../data/deformationScenarios";
 import "./ChipPackageViewer.css";
 
 interface Props {
@@ -69,6 +71,24 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
   const [rightTab, setRightTab] = useState<RightTab>("comparison");
   const [stale, setStale] = useState(false);
 
+  // Deformation state
+  const [deformationScale, setDeformationScale] = useState(10);
+  const [selectedScenario, setSelectedScenario] = useState<string>("custom");
+  const [deformationField, setDeformationField] = useState<string>("warpage");
+
+  // Build unified deformation results for DeformationViewer
+  const deformationResults = useMemo(() => {
+    if (!thermalResult || !cteResult) return null;
+    const sr = shearResult;
+    return {
+      temperature: { min: thermalResult.T_bottom, max: thermalResult.T_die_top, mean: (thermalResult.T_bottom + thermalResult.T_die_top) / 2 },
+      displacement: { min: 0, max: sr ? sr.delta_total : cteResult.warpage, mean: sr ? sr.delta_total * 0.5 : cteResult.warpage * 0.5 },
+      vonMises: { min: 0, max: sr ? sr.tau_max : cteResult.sigma_thermal * 0.5, mean: sr ? sr.tau_avg : cteResult.sigma_thermal * 0.3 },
+      thermalStress: { min: 0, max: cteResult.sigma_thermal, mean: cteResult.sigma_thermal * 0.6 },
+      warpage: { min: 0, max: cteResult.warpage, mean: cteResult.warpage * 0.5 },
+    };
+  }, [thermalResult, shearResult, cteResult]);
+
   const currentMat = allMaterials[dbaMaterial] ?? MATERIALS["Epoxy DBA"];
 
   // Mark stale when params change after a solve
@@ -90,7 +110,12 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
       setThermalResult(tr);
       setCTEResult(cte);
 
-      if (analysisType === "shear") {
+      if (analysisType === "deformation") {
+        // Combined thermo-mechanical: thermal + shear + CTE
+        const sr = solveShear(geo, shearBCs, dbaMaterial);
+        setShearResult(sr);
+        setTransientResult(null);
+      } else if (analysisType === "shear") {
         const sr = solveShear(geo, shearBCs, dbaMaterial);
         setShearResult(sr);
         setTransientResult(null);
@@ -116,6 +141,17 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
     setComparison(results);
     setRightTab("comparison");
   }, [geo, thermalBCs, shearBCs]);
+
+  // Handle deformation scenario selection
+  const handleScenarioChange = useCallback((scenarioId: string) => {
+    setSelectedScenario(scenarioId);
+    if (scenarioId === "custom") return;
+    const scenario = DEFORMATION_SCENARIOS.find((s) => s.id === scenarioId);
+    if (!scenario) return;
+    setThermalBCs({ heatFlux: scenario.thermalParams.heat_flux, bottomTemp: scenario.thermalParams.bottom_temp, convectionH: 0, convectionTInf: 25 });
+    setShearBCs({ force: scenario.structuralParams.shear_force, direction: "X" });
+    setDbaMaterial(scenario.dbaMaterial);
+  }, []);
 
   // Parameter sweep
   const handleSweep = useCallback(() => {
@@ -226,12 +262,39 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
             {geoField("die_t", "Thickness", "mm")}
           </div>
 
+          {/* Deformation Scenario Selector */}
+          {analysisType === "deformation" && (
+            <div className="param-section">
+              <div className="param-section-title">Deformation Scenario</div>
+              <select className="dba-select" style={{ width: "100%", marginBottom: 8 }}
+                value={selectedScenario} onChange={(e) => handleScenarioChange(e.target.value)}>
+                <option value="custom">Custom Parameters</option>
+                {DEFORMATION_SCENARIOS.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              {selectedScenario !== "custom" && (
+                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.4, marginBottom: 8 }}>
+                  {DEFORMATION_SCENARIOS.find((s) => s.id === selectedScenario)?.description}
+                </div>
+              )}
+              <div className="param-section-title" style={{ marginTop: 8 }}>3D Display Field</div>
+              <select className="dba-select" style={{ width: "100%", marginBottom: 8 }}
+                value={deformationField} onChange={(e) => setDeformationField(e.target.value)}>
+                <option value="warpage">Warpage</option>
+                <option value="temperature">Temperature</option>
+                <option value="vonmises">Von Mises Stress</option>
+                <option value="thermal_stress">Thermal Stress</option>
+              </select>
+            </div>
+          )}
+
           {/* Boundary Conditions */}
           <div className="param-section">
             <div className="param-section-title">
-              {analysisType === "thermal" ? "Thermal BCs" : "Shear BCs"}
+              {analysisType === "deformation" ? "Thermo-Mechanical BCs" : analysisType === "thermal" ? "Thermal BCs" : "Shear BCs"}
             </div>
-            {analysisType === "thermal" ? (
+            {(analysisType === "thermal" || analysisType === "deformation") ? (
               <>
                 <div className="param-row">
                   <label>Heat Flux</label>
@@ -270,6 +333,20 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
                     <span className="param-unit">°C</span>
                   </div>
                 </div>
+              {analysisType === "deformation" && (
+                <>
+                  <div className="param-group-label" style={{ marginTop: 8, fontWeight: 600 }}>Mechanical Load</div>
+                  <div className="param-row">
+                    <label>Shear Force</label>
+                    <div className="param-input-wrap">
+                      <input type="number" step="any" value={shearBCs.force}
+                        onChange={(e) => setShearBCs((b) => ({ ...b, force: parseFloat(e.target.value) || 0 }))}
+                        className="param-input" />
+                      <span className="param-unit">N</span>
+                    </div>
+                  </div>
+                </>
+              )}
               </>
             ) : (
               <>
@@ -431,8 +508,12 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
               geo={geo}
               exploded={exploded}
               wireframe={wireframe}
-              thermalResult={solved && (analysisType === "thermal" || (analysisMode === "transient" && transientResult != null)) ? thermalResult : null}
-              shearResult={solved && analysisType === "shear" ? shearResult : null}
+              thermalResult={solved && (analysisType === "thermal" || analysisType === "deformation" || (analysisMode === "transient" && transientResult != null)) ? thermalResult : null}
+              shearResult={solved && (analysisType === "shear" || analysisType === "deformation") ? shearResult : null}
+              cteResult={solved && analysisType === "deformation" ? cteResult : null}
+              deformationMode={analysisType === "deformation" && solved}
+              deformationScale={deformationScale}
+              deformationField={deformationField}
             />
             <gridHelper args={[16, 16, "#1a2a4a", "#111828"]} />
             <axesHelper args={[3]} />
@@ -483,6 +564,14 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
 
         {/* ============ RIGHT PANEL: Tabs ============ */}
         <div className="chip-comparison-panel">
+          {analysisType === "deformation" && deformationResults ? (
+            <DeformationViewer
+              results={deformationResults}
+              scenario={selectedScenario === "custom" ? "Custom" : DEFORMATION_SCENARIOS.find((s) => s.id === selectedScenario)?.name ?? "Custom"}
+              onScaleChange={setDeformationScale}
+            />
+          ) : (
+          <>
           <div className="right-tabs">
             <button className={`tab-btn ${rightTab === "comparison" ? "active" : ""}`}
               onClick={() => setRightTab("comparison")}>Compare</button>
@@ -518,6 +607,8 @@ export function ChipPackageViewer({ nodeId: _nodeId, onBack }: Props) {
               setExpData={setExpData}
               corrResult={corrResult}
             />
+          )}
+          </>
           )}
         </div>
       </div>
@@ -843,14 +934,32 @@ function AddMaterialForm({ onAdd }: { onAdd: (mat: typeof MATERIALS[string]) => 
 // 3D Chip Package Geometry
 // ============================================================
 
-function ChipPackage3D({ geo, exploded, wireframe, thermalResult, shearResult }: {
+function ChipPackage3D({ geo, exploded, wireframe, thermalResult, shearResult, cteResult, deformationMode, deformationScale, deformationField }: {
   geo: ChipGeometry;
   exploded: boolean;
   wireframe: boolean;
   thermalResult: ThermalResult | null;
   shearResult: ShearResult | null;
+  cteResult?: CTEResult | null;
+  deformationMode?: boolean;
+  deformationScale?: number;
+  deformationField?: string;
 }) {
   const gap = exploded ? 1.5 : 0;
+  const scale = deformationScale ?? 10;
+
+  // CTE-driven warpage per layer (mm): leadframe bows down, die bows up
+  const layerWarpage = useMemo(() => {
+    if (!deformationMode || !cteResult) return [0, 0, 0];
+    const w = cteResult.warpage * 1e3; // convert m → mm
+    // Bimetallic strip effect: Cu (high CTE) expands more → concave up
+    // Leadframe: slight downward bow, DBA: neutral, Die: upward bow
+    return [
+      -w * 0.3 * scale, // leadframe bows down
+      0,                 // DBA at neutral axis
+      w * 0.7 * scale,   // die bows up (thermally loaded)
+    ];
+  }, [deformationMode, cteResult, scale]);
 
   const layers = useMemo(() => {
     const lf_z0 = 0, lf_z1 = geo.lf_t;
@@ -865,24 +974,45 @@ function ChipPackage3D({ geo, exploded, wireframe, thermalResult, shearResult }:
 
   const tRange = thermalResult ? { min: thermalResult.T_bottom, max: thermalResult.T_die_top } : null;
 
+  // Determine which result to use for coloring in deformation mode
+  const useDeformationColors = !!(deformationMode && cteResult);
+  const effectiveField = deformationField ?? "warpage";
+
   return (
     <group position={[-geo.lf_w / 2, -geo.lf_h / 2, 0]}>
       {layers.map((layer, li) => (
-        <LayerBox key={li} layer={layer} wireframe={wireframe}
-          thermalResult={thermalResult} shearResult={shearResult}
-          tRange={tRange} layerIndex={li} />
+        <group key={li}>
+          {/* Deformed solid layer */}
+          <LayerBox layer={{ ...layer, z0: layer.z0 + layerWarpage[li], z1: layer.z1 + layerWarpage[li] }}
+            wireframe={wireframe}
+            thermalResult={useDeformationColors && effectiveField === "temperature" ? thermalResult : (!deformationMode ? thermalResult : null)}
+            shearResult={useDeformationColors && effectiveField === "vonmises" ? shearResult : (!deformationMode ? shearResult : null)}
+            tRange={tRange} layerIndex={li}
+            warpageColor={useDeformationColors && (effectiveField === "warpage" || effectiveField === "thermal_stress")}
+            warpageValue={cteResult ? (effectiveField === "thermal_stress" ? cteResult.sigma_thermal : cteResult.warpage) : 0}
+          />
+          {/* Undeformed wireframe overlay (ghost) */}
+          {deformationMode && layerWarpage[li] !== 0 && (
+            <mesh position={[layer.x + layer.w / 2, layer.y + layer.h / 2, (layer.z0 + layer.z1) / 2]}>
+              <boxGeometry args={[layer.w, layer.h, layer.z1 - layer.z0]} />
+              <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.15} />
+            </mesh>
+          )}
+        </group>
       ))}
     </group>
   );
 }
 
-function LayerBox({ layer, wireframe, thermalResult, shearResult, tRange, layerIndex }: {
+function LayerBox({ layer, wireframe, thermalResult, shearResult, tRange, layerIndex, warpageColor, warpageValue }: {
   layer: { name: string; x: number; y: number; w: number; h: number; z0: number; z1: number; baseColor: string };
   wireframe: boolean;
   thermalResult: ThermalResult | null;
   shearResult: ShearResult | null;
   tRange: { min: number; max: number } | null;
   layerIndex: number;
+  warpageColor?: boolean;
+  warpageValue?: number;
 }) {
   const geom = useMemo(() => {
     const g = new THREE.BoxGeometry(layer.w, layer.h, layer.z1 - layer.z0);
@@ -910,10 +1040,27 @@ function LayerBox({ layer, wireframe, thermalResult, shearResult, tRange, layerI
       }
       g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     }
+    if (warpageColor && !thermalResult && !shearResult) {
+      // Warpage/thermal-stress color map: blue → green → yellow → red
+      const posArr = g.attributes.position;
+      const colors = new Float32Array(posArr.count * 3);
+      void warpageValue; // used conceptually for color range scaling
+      for (let i = 0; i < posArr.count; i++) {
+        // Map position within layer to color based on distance from center
+        const lx = posArr.getX(i) / (layer.w || 1);
+        const ly = posArr.getY(i) / (layer.h || 1);
+        const dist = Math.sqrt(lx * lx + ly * ly); // 0 at center, ~0.7 at corners
+        const t = Math.min(dist * 1.4, 1.0); // normalized 0→1
+        // Blue → Cyan → Green → Yellow → Red
+        const [r, gb, b] = temperatureToColor(t * 100, 0, 100);
+        colors[i * 3] = r; colors[i * 3 + 1] = gb; colors[i * 3 + 2] = b;
+      }
+      g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    }
     return g;
-  }, [layer, thermalResult, shearResult, tRange, layerIndex]);
+  }, [layer, thermalResult, shearResult, tRange, layerIndex, warpageColor, warpageValue]);
 
-  const hasColors = thermalResult != null || shearResult != null;
+  const hasColors = thermalResult != null || shearResult != null || warpageColor;
   const cx = layer.x + layer.w / 2;
   const cy = layer.y + layer.h / 2;
   const cz = (layer.z0 + layer.z1) / 2;
