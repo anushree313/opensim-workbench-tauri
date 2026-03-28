@@ -5,7 +5,7 @@ use nalgebra::{DMatrix, DVector};
 use core_mesh::{ElementKind, Mesh};
 use core_post::{FieldData, FieldLocation, FieldType, ResultSet};
 
-use crate::tet4_thermal::{tet4_conductivity, tet4_heat_flux};
+use crate::tet4_thermal::{tet4_capacitance, tet4_conductivity, tet4_heat_flux};
 use crate::{ThermalAnalysis, ThermalBc, ThermalMaterial};
 
 #[derive(Debug, thiserror::Error)]
@@ -164,6 +164,167 @@ pub fn solve_steady_thermal(
 }
 
 /// Solve steady-state thermal with per-element-set material properties.
+/// Solve transient thermal analysis using implicit (backward) Euler time-stepping.
+///
+/// System: (C/dt + K) * T_{n+1} = (C/dt) * T_n + f
+/// where C is the capacitance matrix, K is the conductivity matrix,
+/// and f is the applied heat load vector.
+pub fn solve_transient_thermal(
+    mesh: &Mesh,
+    analysis: &ThermalAnalysis,
+    material: &ThermalMaterial,
+) -> Result<ResultSet, ThermalSolverError> {
+    if mesh.nodes.is_empty() {
+        return Err(ThermalSolverError::EmptyMesh);
+    }
+
+    let tet_elements: Vec<_> = mesh
+        .elements
+        .iter()
+        .filter(|e| e.kind == ElementKind::Tet4)
+        .collect();
+
+    if tet_elements.is_empty() {
+        return Err(ThermalSolverError::NoTet4Elements);
+    }
+
+    let node_id_to_idx: HashMap<u64, usize> = mesh
+        .nodes
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (n.id, i))
+        .collect();
+
+    let num_nodes = mesh.nodes.len();
+
+    let node_sets: HashMap<&str, &[u64]> = mesh
+        .node_sets
+        .iter()
+        .map(|ns| (ns.name.as_str(), ns.node_ids.as_slice()))
+        .collect();
+
+    // Time parameters
+    let dt = analysis.solver_settings.time_step.unwrap_or(0.1);
+    let t_end = analysis.solver_settings.time_end.unwrap_or(1.0);
+    let num_steps = ((t_end / dt).ceil() as usize).max(1).min(1000); // cap at 1000 steps
+
+    // 1. Assemble global conductivity K and capacitance C matrices
+    let mut k_global = DMatrix::<f64>::zeros(num_nodes, num_nodes);
+    let mut c_global = DMatrix::<f64>::zeros(num_nodes, num_nodes);
+
+    for elem in &tet_elements {
+        if elem.node_ids.len() < 4 { continue; }
+
+        let mut elem_nodes = [[0.0_f64; 3]; 4];
+        let mut elem_indices = [0_usize; 4];
+
+        for (i, &nid) in elem.node_ids.iter().take(4).enumerate() {
+            if let Some(&idx) = node_id_to_idx.get(&nid) {
+                elem_nodes[i] = mesh.nodes[idx].position;
+                elem_indices[i] = idx;
+            }
+        }
+
+        let ke = tet4_conductivity(&elem_nodes, material.conductivity);
+        let ce = tet4_capacitance(&elem_nodes, material.density, material.specific_heat);
+
+        for i in 0..4 {
+            for j in 0..4 {
+                k_global[(elem_indices[i], elem_indices[j])] += ke[(i, j)];
+                c_global[(elem_indices[i], elem_indices[j])] += ce[(i, j)];
+            }
+        }
+    }
+
+    // 2. Build system matrix: A = C/dt + K
+    let c_over_dt = &c_global * (1.0 / dt);
+    let a_system = &c_over_dt + &k_global;
+
+    // 3. Build applied load vector (constant in time for simplicity)
+    let mut f_applied = DVector::<f64>::zeros(num_nodes);
+
+    // 4. Initial condition: T_0 = reference temperature (from first FixedTemperature BC or 25°C)
+    let mut t_current = DVector::<f64>::from_element(num_nodes, 25.0);
+
+    // Apply BCs to identify fixed temperatures and heat loads
+    let penalty = 1e30;
+    let mut a_bc = a_system.clone();
+
+    for bc in &analysis.boundary_conditions {
+        match bc {
+            ThermalBc::FixedTemperature { node_set, temperature } => {
+                let ids = resolve_node_set(node_set, &node_sets, mesh)?;
+                for &nid in &ids {
+                    if let Some(&idx) = node_id_to_idx.get(&nid) {
+                        a_bc[(idx, idx)] += penalty;
+                        // Set initial condition at fixed nodes
+                        t_current[idx] = *temperature;
+                    }
+                }
+            }
+            ThermalBc::HeatFlux { element_set: _, flux } => {
+                // Simplified: distribute flux to all surface nodes
+                // In practice, should be applied to specific face elements
+                let flux_per_node = flux / num_nodes as f64;
+                for i in 0..num_nodes {
+                    f_applied[i] += flux_per_node;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // 5. Time-stepping loop (implicit Euler)
+    let lu = a_bc.lu();
+    let mut all_temps: Vec<Vec<Vec<f64>>> = Vec::with_capacity(num_steps + 1);
+    let mut time_steps: Vec<f64> = Vec::with_capacity(num_steps + 1);
+
+    // Store initial state
+    time_steps.push(0.0);
+    all_temps.push((0..num_nodes).map(|i| vec![t_current[i]]).collect());
+
+    for step in 0..num_steps {
+        let t = (step + 1) as f64 * dt;
+
+        // RHS = (C/dt) * T_n + f_applied
+        let mut rhs = &c_over_dt * &t_current + &f_applied;
+
+        // Re-apply temperature BCs to RHS
+        for bc in &analysis.boundary_conditions {
+            if let ThermalBc::FixedTemperature { node_set, temperature } = bc {
+                let ids = resolve_node_set(node_set, &node_sets, mesh)?;
+                for &nid in &ids {
+                    if let Some(&idx) = node_id_to_idx.get(&nid) {
+                        rhs[idx] = penalty * temperature;
+                    }
+                }
+            }
+        }
+
+        // Solve A * T_{n+1} = rhs
+        if let Some(t_next) = lu.solve(&rhs) {
+            t_current = t_next;
+        }
+
+        // Store every step (or every Nth step for large simulations)
+        time_steps.push(t);
+        all_temps.push((0..num_nodes).map(|i| vec![t_current[i]]).collect());
+    }
+
+    // 6. Build ResultSet
+    let mut result_set = ResultSet::new("Transient Thermal Results");
+    result_set.time_steps = time_steps;
+
+    result_set.fields.push(FieldData {
+        name: "Temperature".to_string(),
+        field_type: FieldType::Scalar,
+        location: FieldLocation::Node,
+        values: all_temps,
+    });
+
+    Ok(result_set)
+}
+
 pub fn solve_steady_thermal_multi_material(
     mesh: &Mesh,
     analysis: &ThermalAnalysis,

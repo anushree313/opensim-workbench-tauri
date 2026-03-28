@@ -297,6 +297,28 @@ pub fn run_dba_comparison(
     engine.run_dba_comparison(node_id, params).map_err(|e| e.to_string())
 }
 
+// -- Modal commands --
+
+#[tauri::command]
+pub fn run_modal(
+    engine: tauri::State<EngineState>,
+    node_id: Uuid,
+    params: serde_json::Value,
+) -> Result<ResultViewDto, String> {
+    engine.run_modal_analysis(node_id, params).map_err(|e| e.to_string())
+}
+
+// -- Transient Thermal commands --
+
+#[tauri::command]
+pub fn run_transient_thermal(
+    engine: tauri::State<EngineState>,
+    node_id: Uuid,
+    params: serde_json::Value,
+) -> Result<ResultViewDto, String> {
+    engine.run_transient_thermal_analysis(node_id, params).map_err(|e| e.to_string())
+}
+
 // -- Thermo-Mechanical commands --
 
 #[tauri::command]

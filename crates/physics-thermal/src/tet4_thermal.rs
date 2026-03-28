@@ -61,6 +61,29 @@ fn tet4_thermal_b_matrix(nodes: &[[f64; 3]; 4], vol: f64) -> DMatrix<f64> {
     b
 }
 
+/// Compute the 4x4 consistent capacitance (thermal mass) matrix for a Tet4 element.
+///
+/// C_e = ρ * c_p * V/20 * [[2,1,1,1],[1,2,1,1],[1,1,2,1],[1,1,1,2]]
+///
+/// Used for transient thermal analysis: (C/dt + K)T_{n+1} = (C/dt)T_n + f
+pub fn tet4_capacitance(nodes: &[[f64; 3]; 4], density: f64, specific_heat: f64) -> DMatrix<f64> {
+    let vol = tet4_volume(nodes);
+    if vol < 1e-20 {
+        return DMatrix::zeros(4, 4);
+    }
+
+    let factor = density * specific_heat * vol / 20.0;
+    let mut ce = DMatrix::zeros(4, 4);
+
+    for i in 0..4 {
+        for j in 0..4 {
+            ce[(i, j)] = if i == j { 2.0 * factor } else { factor };
+        }
+    }
+
+    ce
+}
+
 /// Compute heat flux at element centroid from nodal temperatures.
 /// Returns [qx, qy, qz] = -k * B * T
 pub fn tet4_heat_flux(nodes: &[[f64; 3]; 4], temperatures: &[f64; 4], k: f64) -> [f64; 3] {

@@ -78,7 +78,7 @@ export function Toolbar({
         >
           &#x2699;
         </button>
-        <span className="toolbar-status">v0.9.0</span>
+        <span className="toolbar-status">v1.0.0</span>
       </div>
     </div>
   );

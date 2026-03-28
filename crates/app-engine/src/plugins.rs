@@ -146,7 +146,7 @@ impl ModuleRegistry {
                 author: "OpenSim Workbench".into(),
                 description: "Linear static structural analysis with Tet4 elements. Supports single and multi-material models.".into(),
                 category: ModuleCategory::Structural,
-                analysis_types: vec!["LinearStatic".into(), "MultiMaterialStatic".into()],
+                analysis_types: vec!["LinearStatic".into(), "MultiMaterialStatic".into(), "Modal".into()],
             },
             input_schema: SolverInputSchema {
                 requires_mesh: true,
@@ -182,7 +182,7 @@ impl ModuleRegistry {
                 author: "OpenSim Workbench".into(),
                 description: "Steady-state heat conduction with Tet4 elements. Multi-material support for layered structures.".into(),
                 category: ModuleCategory::Thermal,
-                analysis_types: vec!["SteadyThermal".into(), "MultiMaterialThermal".into()],
+                analysis_types: vec!["SteadyThermal".into(), "MultiMaterialThermal".into(), "TransientThermal".into()],
             },
             input_schema: SolverInputSchema {
                 requires_mesh: true,

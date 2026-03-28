@@ -131,6 +131,35 @@ fn isotropic_d_matrix(e: f64, nu: f64) -> DMatrix<f64> {
     d
 }
 
+/// Compute the 12x12 consistent mass matrix for a Tet4 element.
+///
+/// M_e = ρ * V * [m] where m is the consistent mass pattern:
+/// For each DOF pair (i,j): m_ij = (1 + δ_ij) * ρ * V / 20
+/// The 4×4 nodal mass sub-matrix is ρ*V/20 * [[2,1,1,1],[1,2,1,1],[1,1,2,1],[1,1,1,2]]
+/// Expanded to 12×12 with 3 DOF per node.
+pub fn tet4_mass(nodes: &[[f64; 3]; 4], density: f64) -> DMatrix<f64> {
+    let vol = tet4_volume(nodes);
+    if vol < 1e-20 {
+        return DMatrix::zeros(12, 12);
+    }
+
+    let factor = density * vol / 20.0;
+    let mut me = DMatrix::zeros(12, 12);
+
+    // For each spatial component (x, y, z)
+    for comp in 0..3 {
+        // For each node pair (i, j)
+        for i in 0..4 {
+            for j in 0..4 {
+                let val = if i == j { 2.0 * factor } else { factor };
+                me[(i * 3 + comp, j * 3 + comp)] = val;
+            }
+        }
+    }
+
+    me
+}
+
 /// Compute strain at element centroid from nodal displacements.
 /// Returns [exx, eyy, ezz, gxy, gyz, gxz].
 pub fn tet4_strain(nodes: &[[f64; 3]; 4], displacements: &[[f64; 3]; 4]) -> [f64; 6] {

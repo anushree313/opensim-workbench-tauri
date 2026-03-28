@@ -1536,6 +1536,75 @@ impl AppEngine {
         Ok(self.build_result_view_dto(node_id, &result, &mesh, "VelocityMagnitude"))
     }
 
+    /// Run modal (eigenvalue) analysis for natural frequencies and mode shapes.
+    pub fn run_modal_analysis(
+        &self,
+        node_id: Uuid,
+        params: serde_json::Value,
+    ) -> Result<ResultViewDto, EngineError> {
+        let mut lock = self.graph.lock().map_err(|_| EngineError::LockPoisoned)?;
+        let graph = lock.as_mut().ok_or(EngineError::NoProject)?;
+        let mesh = self.find_upstream_mesh(graph, node_id)?;
+
+        let e = params.get("youngs_modulus").and_then(|v| v.as_f64()).unwrap_or(200e9);
+        let nu = params.get("poisson_ratio").and_then(|v| v.as_f64()).unwrap_or(0.3);
+        let density = params.get("density").and_then(|v| v.as_f64()).unwrap_or(7800.0);
+        let num_modes = params.get("num_modes").and_then(|v| v.as_u64()).unwrap_or(6) as u32;
+
+        let material = physics_structural::IsotropicMaterial { youngs_modulus: e, poisson_ratio: nu, density };
+        let analysis = physics_structural::StructuralAnalysis::new_modal(num_modes);
+
+        let result = physics_structural::solver::solve_modal(&mesh, &analysis, &material)
+            .map_err(|e| EngineError::Solver(e.to_string()))?;
+
+        Ok(self.build_result_view_dto(node_id, &result, &mesh, "NaturalFrequency"))
+    }
+
+    /// Run transient thermal analysis with time-stepping.
+    pub fn run_transient_thermal_analysis(
+        &self,
+        node_id: Uuid,
+        params: serde_json::Value,
+    ) -> Result<ResultViewDto, EngineError> {
+        let mut lock = self.graph.lock().map_err(|_| EngineError::LockPoisoned)?;
+        let graph = lock.as_mut().ok_or(EngineError::NoProject)?;
+        let mesh = self.find_upstream_mesh(graph, node_id)?;
+
+        let k = params.get("conductivity").and_then(|v| v.as_f64()).unwrap_or(50.0);
+        let cp = params.get("specific_heat").and_then(|v| v.as_f64()).unwrap_or(500.0);
+        let rho = params.get("density").and_then(|v| v.as_f64()).unwrap_or(7800.0);
+
+        let material = physics_thermal::ThermalMaterial { conductivity: k, specific_heat: cp, density: rho };
+
+        let dt = params.get("time_step").and_then(|v| v.as_f64()).unwrap_or(0.1);
+        let t_end = params.get("time_end").and_then(|v| v.as_f64()).unwrap_or(1.0);
+
+        let bottom_temp = params.get("fixed_temperature").and_then(|v| v.as_f64()).unwrap_or(25.0);
+        let heat_flux = params.get("heat_flux").and_then(|v| v.as_f64()).unwrap_or(50000.0);
+
+        let bottom_set = mesh.node_sets.first().map(|ns| ns.name.clone()).unwrap_or_else(|| "0".to_string());
+        let top_set = mesh.node_sets.last().map(|ns| ns.name.clone()).unwrap_or_else(|| "1".to_string());
+
+        let analysis = physics_thermal::ThermalAnalysis {
+            id: Uuid::new_v4(),
+            analysis_type: physics_thermal::ThermalAnalysisType::Transient,
+            boundary_conditions: vec![
+                physics_thermal::ThermalBc::FixedTemperature { node_set: bottom_set, temperature: bottom_temp },
+                physics_thermal::ThermalBc::HeatFlux { element_set: top_set, flux: heat_flux },
+            ],
+            solver_settings: physics_thermal::ThermalSolverSettings {
+                time_end: Some(t_end),
+                time_step: Some(dt),
+                ..Default::default()
+            },
+        };
+
+        let result = physics_thermal::solver::solve_transient_thermal(&mesh, &analysis, &material)
+            .map_err(|e| EngineError::Solver(e.to_string()))?;
+
+        Ok(self.build_result_view_dto(node_id, &result, &mesh, "Temperature"))
+    }
+
     /// Run coupled thermo-mechanical analysis with CTE warpage for chip packages.
     pub fn run_thermo_mechanical_analysis(
         &self,

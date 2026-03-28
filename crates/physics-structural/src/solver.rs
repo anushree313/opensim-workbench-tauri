@@ -5,7 +5,7 @@ use nalgebra::{DMatrix, DVector};
 use core_mesh::{ElementKind, Mesh};
 use core_post::{FieldData, FieldLocation, FieldType, ResultSet};
 
-use crate::tet4::{tet4_strain, tet4_stiffness, tet4_stress, von_mises};
+use crate::tet4::{tet4_mass, tet4_strain, tet4_stiffness, tet4_stress, von_mises};
 use crate::{BoundaryCondition, IsotropicMaterial, StructuralAnalysis, StructuralMaterialMap};
 
 #[derive(Debug, thiserror::Error)]
@@ -499,6 +499,167 @@ pub fn solve_linear_static_multi_material(
         field_type: FieldType::Scalar,
         location: FieldLocation::Element,
         values: vec![shear_xz_values],
+    });
+
+    Ok(result_set)
+}
+
+/// Solve a modal (eigenvalue) analysis for natural frequencies and mode shapes.
+///
+/// Assembles global stiffness K and mass M matrices, transforms to standard
+/// eigenvalue problem via M^(-1)K, and extracts the first `num_modes` eigenvalues.
+/// Output: natural frequencies (Hz) in time_steps, mode shapes as displacement fields.
+pub fn solve_modal(
+    mesh: &Mesh,
+    analysis: &StructuralAnalysis,
+    material: &IsotropicMaterial,
+) -> Result<ResultSet, SolverError> {
+    if mesh.nodes.is_empty() {
+        return Err(SolverError::EmptyMesh);
+    }
+
+    let tet_elements: Vec<_> = mesh
+        .elements
+        .iter()
+        .filter(|e| e.kind == ElementKind::Tet4)
+        .collect();
+
+    if tet_elements.is_empty() {
+        return Err(SolverError::NoTet4Elements);
+    }
+
+    let node_id_to_idx: HashMap<u64, usize> = mesh
+        .nodes
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (n.id, i))
+        .collect();
+
+    let num_nodes = mesh.nodes.len();
+    let ndof = num_nodes * 3;
+    let num_modes = analysis.solver_settings.num_modes.unwrap_or(6) as usize;
+
+    let node_sets: HashMap<&str, &[u64]> = mesh
+        .node_sets
+        .iter()
+        .map(|ns| (ns.name.as_str(), ns.node_ids.as_slice()))
+        .collect();
+
+    // 1. Assemble global stiffness and mass matrices
+    let mut k_global = DMatrix::zeros(ndof, ndof);
+    let mut m_global = DMatrix::zeros(ndof, ndof);
+
+    for elem in &tet_elements {
+        if elem.node_ids.len() < 4 { continue; }
+
+        let mut elem_nodes = [[0.0_f64; 3]; 4];
+        let mut elem_dofs = [0_usize; 12];
+
+        for (i, &nid) in elem.node_ids.iter().take(4).enumerate() {
+            if let Some(&idx) = node_id_to_idx.get(&nid) {
+                elem_nodes[i] = mesh.nodes[idx].position;
+                elem_dofs[i * 3] = idx * 3;
+                elem_dofs[i * 3 + 1] = idx * 3 + 1;
+                elem_dofs[i * 3 + 2] = idx * 3 + 2;
+            }
+        }
+
+        let ke = tet4_stiffness(&elem_nodes, material.youngs_modulus, material.poisson_ratio);
+        let me = tet4_mass(&elem_nodes, material.density);
+
+        for i in 0..12 {
+            for j in 0..12 {
+                k_global[(elem_dofs[i], elem_dofs[j])] += ke[(i, j)];
+                m_global[(elem_dofs[i], elem_dofs[j])] += me[(i, j)];
+            }
+        }
+    }
+
+    // 2. Apply BC penalty: constrained DOFs get large K, large M (removes rigid body modes)
+    let penalty_k = 1e30;
+    let penalty_m = 1e30;
+
+    for bc in &analysis.boundary_conditions {
+        if let BoundaryCondition::FixedSupport { node_set } = bc {
+            let node_ids = resolve_node_set(node_set, &node_sets, mesh)?;
+            for &nid in &node_ids {
+                if let Some(&idx) = node_id_to_idx.get(&nid) {
+                    for d in 0..3 {
+                        let dof = idx * 3 + d;
+                        k_global[(dof, dof)] += penalty_k;
+                        m_global[(dof, dof)] += penalty_m;
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Transform to standard eigenvalue: A = M^(-1) * K
+    // Use LU to compute M^(-1)*K column by column
+    let m_lu = m_global.clone().lu();
+    let a = m_lu.solve(&k_global).unwrap_or_else(|| DMatrix::zeros(ndof, ndof));
+
+    // Symmetrize A (numerical errors can make it slightly asymmetric)
+    let a_sym = (&a + a.transpose()) * 0.5;
+
+    // 4. Eigenvalue decomposition
+    let eigen = nalgebra::SymmetricEigen::new(a_sym);
+    let eigenvalues = eigen.eigenvalues;
+    let eigenvectors = eigen.eigenvectors;
+
+    // 5. Sort eigenvalues (ascending) and extract first num_modes
+    let mut eig_pairs: Vec<(f64, usize)> = eigenvalues.iter()
+        .enumerate()
+        .map(|(i, &val)| (val, i))
+        .filter(|(val, _)| *val > 0.0 && val.is_finite()) // skip negative/zero/penalty modes
+        .collect();
+    eig_pairs.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+
+    let actual_modes = num_modes.min(eig_pairs.len());
+
+    // 6. Build ResultSet
+    let mut result_set = ResultSet::new("Modal Analysis Results");
+
+    // Time steps = natural frequencies in Hz
+    let frequencies: Vec<f64> = eig_pairs.iter()
+        .take(actual_modes)
+        .map(|(lambda, _)| lambda.sqrt() / (2.0 * std::f64::consts::PI))
+        .collect();
+    result_set.time_steps = frequencies.clone();
+
+    // Frequency field (same value at all nodes for each mode, stored per time step)
+    let mut freq_values: Vec<Vec<Vec<f64>>> = Vec::new();
+    for &freq in &frequencies {
+        let step_values: Vec<Vec<f64>> = (0..num_nodes).map(|_| vec![freq]).collect();
+        freq_values.push(step_values);
+    }
+    result_set.fields.push(FieldData {
+        name: "NaturalFrequency".to_string(),
+        field_type: FieldType::Scalar,
+        location: FieldLocation::Node,
+        values: freq_values,
+    });
+
+    // Mode shape fields (displacement eigenvectors, one per time step/mode)
+    let mut mode_values: Vec<Vec<Vec<f64>>> = Vec::new();
+    for (_, &(_, col_idx)) in eig_pairs.iter().take(actual_modes).enumerate() {
+        let eigvec = eigenvectors.column(col_idx);
+        // Normalize mode shape to unit max displacement
+        let max_disp = eigvec.iter().map(|v| v.abs()).fold(0.0_f64, f64::max).max(1e-20);
+        let step_values: Vec<Vec<f64>> = (0..num_nodes).map(|i| {
+            vec![
+                eigvec[i * 3] / max_disp,
+                eigvec[i * 3 + 1] / max_disp,
+                eigvec[i * 3 + 2] / max_disp,
+            ]
+        }).collect();
+        mode_values.push(step_values);
+    }
+    result_set.fields.push(FieldData {
+        name: "ModeShape".to_string(),
+        field_type: FieldType::Vector,
+        location: FieldLocation::Node,
+        values: mode_values,
     });
 
     Ok(result_set)

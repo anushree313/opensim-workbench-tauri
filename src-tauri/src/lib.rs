@@ -40,6 +40,8 @@ pub fn run() {
             commands::run_six_sigma,
             commands::run_chip_package_analysis,
             commands::run_dba_comparison,
+            commands::run_modal,
+            commands::run_transient_thermal,
             commands::run_thermo_mechanical,
             commands::run_cfd,
             commands::run_em,
